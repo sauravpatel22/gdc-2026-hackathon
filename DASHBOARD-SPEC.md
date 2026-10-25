@@ -1,3 +1,5 @@
+Built per `DASHBOARD-PLAN.md`, which records every change to this spec.
+
 # Testudo Dashboard: Specification (draft 3, ready to build)
 
 A long-range reflection page for the user. The popup and the floating pet answer "how am I doing right now?". The dashboard answers "how have I been doing, and what's changing?".

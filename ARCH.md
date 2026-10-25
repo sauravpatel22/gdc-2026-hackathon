@@ -62,8 +62,12 @@ Constants only, no functions.
 | `DEFAULT_BUDGET_MINUTES` | `120` | Default daily gambling-time budget |
 | `DEMO_MULTIPLIER` | `10` | Speeds up time in demo mode |
 | `RECOVERY_PER_HOUR` | `5` | Health recovered per hour |
+| `BACKEND_URL` | `http://localhost:8000` | Dashboard backend. The only place this URL lives |
 
-`DEFAULT_BUDGET_MINUTES` is used by `storage.js`. `DEMO_MULTIPLIER` and `RECOVERY_PER_HOUR` are used by the time tracker in `background.js`. `MODEL_NAME` and `OLLAMA_URL` are used by `gemma.js`.
+`DEFAULT_BUDGET_MINUTES` is used by `storage.js`. `BACKEND_URL` is used by `sync.js` and the "Open dashboard" links. `DEMO_MULTIPLIER` and `RECOVERY_PER_HOUR` are used by the time tracker in `background.js`. `MODEL_NAME` and `OLLAMA_URL` are used by `gemma.js`.
+
+### `sync.js`
+Sends gambling ticks to the dashboard backend. Imported only by `background.js`. **`record(fields)`** appends a tick to the `outbox` (capped at 5000, oldest dropped). **`captureBackfill()`** snapshots the day's state once, before the first tick is recorded. **`flush()`** posts the backfill and outbox in batches to `POST /api/events` and removes sent ticks by `ts|hostname`. It never throws, so the extension works with the backend off. Read-modify-writes of `outbox` and `pendingBackfill` are serialized through a promise chain.
 
 ### `storage.js`
 Thin async wrappers over `chrome.storage.local`.
@@ -198,6 +202,7 @@ The shape is defined in `getDefaultState()`. These fields are written so far:
 - `health`, `gamblingMinutesToday`, `lastGamblingAt`: updated by the time tracker.
 - `streak`, `lastResetDate`: updated by the daily reset.
 - `petHidden`: set by the popup checkbox and the floating Testudo's "Hide my Testudo" button.
+- `outbox`, `pendingBackfill`, `syncBackfillDone`, `userId`: sync state used by `sync.js` (`userId` is `"local"` until auth exists).
 - `demoMode`, `enabled`: read by the time tracker, but nothing sets them yet. You can flip them from the console with `chrome.storage.local.set({ demoMode: true })`.
 
 Cache example:
@@ -213,6 +218,15 @@ cache: {
 `source` is `"domain"`, `"keyword"`, or `"gemma"`.
 
 `budgetMinutes`, `reason`, `cooldowns`, and `pausesThisWeek` exist with defaults but nothing updates them yet.
+
+## Dashboard backend (`server/`) and frontend (`dashboard/`)
+
+Not part of the extension. A local FastAPI + SQLite app that stores the ticks `sync.js` sends and serves the history page. See `DASHBOARD-PLAN.md` for the full contract.
+
+- `server/`: `app.py` (events, health, wiring), `db.py` (schema), `ingest.py` (idempotent writes, recomputes `daily` and `daily_sites`), `scoring.py`, `windows.py`, `queries.py`, `routes_read.py` (summary, series, sites, score, heatmap), `routes_data.py` (export, delete), `retention.py` (raw events kept 90 days), `seed.py` (fake history), `tests/`.
+- `dashboard/`: vanilla JS ES modules and inline SVG, served by the backend at `/`. `/pet.js` is the extension's own `pet.js`.
+- Every table has `user_id` (always `local` for now), and the extension's `BACKEND_URL` is the only URL to change for a remote deployment.
+- Postgres port points: `INSERT OR IGNORE`, `INSERT OR REPLACE`, and `PRAGMA` are the only SQLite-specific SQL.
 
 ## Not built yet
 

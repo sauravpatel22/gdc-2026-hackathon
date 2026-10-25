@@ -187,11 +187,11 @@ select:focus-visible,
 #chart .limit { stroke: var(--muted); stroke-width: 1; }
 #chart .limit-label { fill: var(--muted); font-size: 11px; }
 #chart .xlab { fill: var(--muted); font-size: 11px; }
-#chart .bar { fill: var(--accent); }
-#chart .bar.over { fill: var(--over); }
-#chart .bar.zero { fill: var(--track); }
-#chart .bars.has-sel .bar { opacity: 0.45; }
-#chart .bars.has-sel .bar.sel { opacity: 1; }
+#chart .col { fill: var(--accent); }
+#chart .col.over { fill: var(--over); }
+#chart .col.zero { fill: var(--track); }
+#chart .bars.has-sel .col { opacity: 0.45; }
+#chart .bars.has-sel .col.sel { opacity: 1; }
 #chart .hit { fill: transparent; cursor: pointer; }
 
 .chart-note { margin: 0; padding: 36px 0; text-align: center; color: var(--muted); line-height: 1.5; }

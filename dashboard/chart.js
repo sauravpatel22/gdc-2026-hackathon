@@ -70,7 +70,7 @@ export function renderBarChart(svgEl, { points, metric, budget, selectedIndex, b
     const v = vals[i];
     if (v == null) return;
     const h = v > 0 ? Math.max(2, (v / max) * PLOT_H) : 1.5;
-    const cls = ["bar", p.over_limit ? "over" : "", v === 0 ? "zero" : "", i === selectedIndex ? "sel" : ""].filter(Boolean).join(" ");
+    const cls = ["col", p.over_limit ? "over" : "", v === 0 ? "zero" : "", i === selectedIndex ? "sel" : ""].filter(Boolean).join(" ");
     const aria = barAriaLabel(labelFor ? labelFor(p) : p.start, metric, p).replace(/"/g, "&quot;");
     bars += `<rect class="${cls}" role="img" aria-label="${aria}" data-i="${i}" x="${(cx - barW / 2).toFixed(1)}" y="${(baseY - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3"/>`;
     hits += `<rect class="hit" aria-hidden="true" data-i="${i}" x="${(PAD_X + slot * i).toFixed(1)}" y="${PAD_TOP}" width="${slot.toFixed(1)}" height="${PLOT_H}"/>`;

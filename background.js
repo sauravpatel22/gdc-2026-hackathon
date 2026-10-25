@@ -1,9 +1,12 @@
 import { getState, setState, todayISO } from "./storage.js";
 import { isKnownGamblingDomain } from "./domains.js";
+import { classifyWithGemma } from "./classifier.js";
 import { computeHealth, getPetStage } from "./health.js";
 import { DEMO_MULTIPLIER, RECOVERY_PER_HOUR } from "./config.js";
 
 const LOW_SCORE_THRESHOLD = 0.3;
+const GEMMA_MIN_CONFIDENCE = 0.6;
+const inFlight = new Map(); // hostname -> pending Gemma promise
 const TICK_ALARM = "tick";
 const IDLE_SECONDS = 60;
 const RECOVERY_DELAY_MS = 10 * 60 * 1000;
@@ -176,9 +179,29 @@ async function handlePageSignal(msg) {
   }
 
   console.log(
-    `[PausePet] ${hostname}: unknown (keywordScore ${score.toFixed(2)}), Gemma will decide in Phase 2`
+    `[PausePet] ${hostname}: unknown (keywordScore ${score.toFixed(2)}), asking Gemma`
   );
-  return { gambling: false, source: "unknown" };
+
+  // Share one Gemma call per hostname so two tabs don't trigger two requests.
+  if (!inFlight.has(hostname)) {
+    const request = classifyWithGemma({
+      url: msg.url,
+      title: msg.title,
+      textSample: msg.textSample,
+    }).finally(() => inFlight.delete(hostname));
+    inFlight.set(hostname, request);
+  }
+  const result = await inFlight.get(hostname);
+
+  // null means Gemma failed: treat as not gambling and don't cache.
+  if (!result) return { gambling: false, source: "unknown" };
+
+  const gambling = result.gambling && result.confidence >= GEMMA_MIN_CONFIDENCE;
+  await writeCache(hostname, gambling, "gemma");
+  console.log(
+    `[PausePet] ${hostname}: ${gambling ? "gambling" : "not gambling"} (Gemma ${result.type}, confidence ${result.confidence}), cached`
+  );
+  return { gambling, source: "gemma" };
 }
 
 // ---------- Messages ----------

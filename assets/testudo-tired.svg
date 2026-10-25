@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Testudo the terrapin, tired">
+  <path d="M7 68 L0 73 L8 73 Z" fill="#b9a77a"/>
+  <ellipse cx="22" cy="77" rx="7" ry="5" fill="#b9a77a"/>
+  <ellipse cx="62" cy="77" rx="7" ry="5" fill="#b9a77a"/>
+  <path d="M10 66 Q10 26 43 26 Q76 26 76 66 Z" fill="#d3243a"/>
+  <path d="M30 38 L56 38 L63 53 L43 62 L23 53 Z" fill="none" stroke="#ffd520" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M30 38 L24 28 M56 38 L62 28 M63 53 L74 54 M23 53 L12 54 M43 62 L43 66" stroke="#ffd520" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M6 64 L80 64 Q80 74 72 74 L14 74 Q6 74 6 64 Z" fill="#ffd520"/>
+  <path d="M6 64 L80 64" stroke="#b8860b" stroke-width="1.2" opacity="0.6"/>
+  <g>
+    <ellipse cx="78" cy="62" rx="8" ry="7" fill="#b9a77a"/>
+    <ellipse cx="88" cy="56" rx="10.5" ry="9" fill="#b9a77a"/>
+    <path d="M80 52 Q86 48 92 49" stroke="#6f6140" stroke-width="1.2" fill="none" opacity="0.5" stroke-linecap="round"/>
+    <circle cx="91" cy="53.6" r="3.2" fill="#fff"/><circle cx="91.8" cy="54" r="1.9" fill="#222"/><path d="M87.6 52.2 Q91 50 94.6 52.2 L94.6 53.6 L87.6 53.6 Z" fill="#7d8a5a"/>
+    <path d="M90.5 60.5 L97 60.5" stroke="#4a3b22" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    
+  </g>
+</svg>

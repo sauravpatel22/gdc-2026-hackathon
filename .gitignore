@@ -1,0 +1,38 @@
+# Claude Code
+CLAUDE.md
+.claude/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Editors / IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+npm-debug.log*
+
+# Dependencies (not used, but just in case)
+node_modules/
+
+# Environment / secrets
+.env
+.env.*
+
+# Extension packaging output
+*.zip
+*.crx
+*.pem
+dist/
+build/
+
+# Temp
+tmp/
+*.tmp

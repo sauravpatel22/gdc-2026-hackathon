@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Testudo Dashboard</title>
+  <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+  <main>
+    <div id="banner"></div>
+
+    <header class="hero">
+      <button type="button" id="pet" class="hero-pet" aria-label="Testudo. Press to see how your score works" aria-expanded="false"></button>
+      <div class="hero-text">
+        <h1 id="headline">Testudo</h1>
+        <p id="message" class="lead"></p>
+        <p id="explain" class="hint" hidden>Your score is a 14-day average where recent days count more, plus a small bonus for your streak.</p>
+        <div class="score-row">
+          <span id="score-num" class="score-num">–</span>
+          <div class="bar" role="presentation"><div id="score-fill" class="fill"></div></div>
+        </div>
+        <p id="streak" class="hint"></p>
+      </div>
+    </header>
+
+    <div class="controls">
+      <label class="metric-pick">
+        <span class="visually-hidden">Metric</span>
+        <select id="metric">
+          <option value="minutes">Time</option>
+          <option value="budget_pct">Limit used</option>
+          <option value="score">Score</option>
+          <option value="sessions">Sessions</option>
+        </select>
+      </label>
+      <div id="ranges" class="ranges" role="group" aria-label="Time range">
+        <button type="button" data-range="day" aria-pressed="false">Day</button>
+        <button type="button" data-range="week" aria-pressed="true">Week</button>
+        <button type="button" data-range="month" aria-pressed="false">Month</button>
+        <button type="button" data-range="6months" aria-pressed="false">6M</button>
+        <button type="button" data-range="year" aria-pressed="false">Year</button>
+      </div>
+      <div class="pager">
+        <button type="button" id="prev" aria-label="Previous period">‹</button>
+        <span id="range-label" class="range-label"></span>
+        <button type="button" id="next" aria-label="Next period">›</button>
+      </div>
+    </div>
+
+    <section class="chart-card">
+      <div class="big">
+        <div id="big-label" class="big-label"></div>
+        <div id="big-value" class="big-value">–</div>
+        <div id="big-delta" class="big-delta" hidden></div>
+      </div>
+      <div id="chart-wrap" class="chart-wrap" tabindex="0" role="group">
+        <svg id="chart" role="presentation" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+      <p id="chart-note" class="chart-note" hidden></p>
+      <div id="live" class="visually-hidden" aria-live="polite"></div>
+    </section>
+
+    <div class="two-col">
+      <div id="sites"></div>
+      <div id="heatmap"></div>
+    </div>
+
+    <div id="highlights"></div>
+    <div id="empty"></div>
+    <div id="demo-toggle"></div>
+
+    <section class="help">
+      <h2><span class="ico" aria-hidden="true">🤝</span> Need to talk to someone?</h2>
+      <p class="sub">Struggling is common, and support is free and confidential. You don't have to do this alone.</p>
+      <ul>
+        <li>US: National Problem Gambling Helpline, call or text <strong>1-800-522-4700</strong> (24/7)</li>
+        <li>Chat online at <a href="https://www.ncpgambling.org/help-treatment/chat/" target="_blank" rel="noopener">ncpgambling.org</a></li>
+      </ul>
+    </section>
+
+    <div id="footer"></div>
+  </main>
+  <script src="/pet.js"></script>
+  <script type="module" src="dashboard.js"></script>
+</body>
+</html>

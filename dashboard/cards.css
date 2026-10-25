@@ -75,3 +75,5 @@
   outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
   outline-offset: 2px;
 }
+
+.mode-switch { margin: 0 0 16px; }

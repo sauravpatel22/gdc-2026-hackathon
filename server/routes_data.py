@@ -61,3 +61,19 @@ def delete_data(confirm: Optional[str] = None, conn=Depends(db.get_conn)):
         raise HTTPException(status_code=400, detail="Add ?confirm=yes to delete everything.")
     delete_user_data(conn)
     return {"ok": True}
+
+
+@router.post("/api/demo/seed")
+def seed_demo(today: Optional[str] = None, conn=Depends(db.get_conn)):
+    """Load a year of sample history, flagged demo so it never mixes into real usage."""
+    from datetime import date
+
+    from .seed import seed
+
+    already = conn.execute(
+        "SELECT 1 FROM events WHERE user_id = ? AND demo = 1 LIMIT 1", (USER_ID,)
+    ).fetchone()
+    if already:
+        return {"ok": True, "seeded": False}
+    seed(conn, 365, demo=True, today=date.fromisoformat(today) if today else None)
+    return {"ok": True, "seeded": True}

@@ -4,7 +4,7 @@ import { renderSites } from "./sites.js";
 import { renderHeatmap } from "./heatmap.js";
 import { renderHighlights } from "./highlights.js";
 import { renderFooter } from "./footer.js";
-import { setOfflineBanner, renderEmpty, clearEmpty, startOfflinePoll, startAutoRefresh, renderDemoToggle } from "./states.js";
+import { setOfflineBanner, renderEmpty, clearEmpty, startOfflinePoll, startAutoRefresh } from "./states.js";
 import { renderBarChart, attachChartInteraction, formatValue, METRIC_NAMES } from "./chart.js";
 
 export const state = { range: "week", metric: "minutes", anchor: todayISO(), selected: null, includeDemo: false };
@@ -214,17 +214,55 @@ function renderCards(d, st) {
   for (const id of ["chart-card", "cards", "highlights"]) $(id).hidden = empty;
   if (empty) renderEmpty($("empty"));
   else clearEmpty($("empty"));
+  renderModeSwitch(st.includeDemo);
   if (!d.summary) return;
   renderSites($("sites"), d.sites, { range: st.range });
   renderHeatmap($("heatmap"), d.heatmap);
   renderHighlights($("highlights"), d.summary);
-  renderDemoToggle($("demo-toggle"), !!(d.health && d.health.has_demo) || st.includeDemo, setDemo);
   // the footer holds the armed-delete state, so draw it once per deployment
   const dep = d.health && d.health.deployment;
   if ($("footer").dataset.deployment !== String(dep)) {
     $("footer").dataset.deployment = String(dep);
     renderFooter($("footer"), d.health, { onDelete: deleteAll });
   }
+}
+
+// "My usage" (real tracking) vs "Sample history" (seeded demo data). Always visible.
+const MODES = [["real", "My usage"], ["sample", "Sample history"]];
+function renderModeSwitch(sample) {
+  const el = $("demo-toggle");
+  if (!el.firstChild) {
+    el.setAttribute("role", "group");
+    el.setAttribute("aria-label", "Data shown");
+    el.classList.add("ranges");
+    for (const [id, label] of MODES) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.mode = id;
+      b.textContent = label;
+      b.addEventListener("click", () => chooseMode(id === "sample"));
+      el.append(b);
+    }
+  }
+  for (const b of el.children) b.setAttribute("aria-pressed", String((b.dataset.mode === "sample") === sample));
+}
+
+async function chooseMode(sample) {
+  if (sample === state.includeDemo) return;
+  try {
+    localStorage.setItem("testudo.mode", sample ? "sample" : "real");
+  } catch {}
+  if (sample && !(data.health && data.health.has_demo)) {
+    // first time: ask the server to load the sample year
+    try {
+      const res = await fetch(`/api/demo/seed?today=${todayISO()}`, { method: "POST" });
+      if (!res.ok) throw new Error(`seed returned ${res.status}`);
+    } catch (err) {
+      console.error("[Testudo] sample data failed", err);
+      return;
+    }
+  }
+  await setDemo(sample);
 }
 
 async function deleteAll() {
@@ -295,6 +333,12 @@ function init() {
     setSelected,
   });
   onRender(renderCards);
+  try {
+    if (localStorage.getItem("testudo.mode") === "sample") {
+      state.includeDemo = true;
+      setIncludeDemo(true);
+    }
+  } catch {}
   render();
   load();
   startAutoRefresh(load);

@@ -1,4 +1,6 @@
-"""Fake history for demos: python -m server.seed --days 365 [--reset] [--seed 42] [--demo-days 0]"""
+"""Fake history for demos: python -m server.seed --days 365 [--reset] [--seed 42] [--demo-days 0] [--as-real]
+
+By default the history is flagged as sample data (demo = 1), so the dashboard keeps it apart from real usage."""
 import argparse
 import random
 from datetime import date, datetime, timedelta
@@ -37,7 +39,7 @@ def _tick(day, hour, minute, host, minutes_so_far, budget, demo=False, second=0)
     )
 
 
-def _day_ticks(rng, day, budget, scale):
+def _day_ticks(rng, day, budget, scale, demo=False):
     """Sessions sit in separate hours, start in the first 10 min and last <= 40 min,
     so consecutive sessions are always more than the 5 min session gap apart."""
     weekend = day.weekday() >= 4  # Fri-Sun
@@ -55,23 +57,23 @@ def _day_ticks(rng, day, budget, scale):
         host = rng.choice(HOSTS)
         for i in range(length):
             total += 1
-            ticks.append(_tick(day, hour, start + i, host, total, budget))
+            ticks.append(_tick(day, hour, start + i, host, total, budget, demo=demo))
     return ticks
 
 
-def build_items(days, rng, today, demo_days=0):
+def build_items(days, rng, today, demo_days=0, demo=False):
     first = today - timedelta(days=days - 1)
     ts, _ = _ts_and_offset(first, 8, 0)
     items = [BackfillEvent(
         type="backfill", user_id=USER_ID, ts=ts, date=first.isoformat(),
-        minutes=0, streak=0, budget=BUDGET, health=100,
+        minutes=0, streak=0, budget=BUDGET, health=100, demo=demo,
     )]
     for i in range(days):
         day = first + timedelta(days=i)
         age = (today - day).days
         budget = BUDGET_AFTER_CHANGE if age <= BUDGET_CHANGE_DAYS_AGO else BUDGET
         scale = 1.0 - 0.3 * i / max(days - 1, 1)  # gently trending down
-        items += _day_ticks(rng, day, budget, scale)
+        items += _day_ticks(rng, day, budget, scale, demo)
         if age < demo_days:
             # Offset by 30 s so demo ticks never collide with real (user, ts, host) keys.
             items += [_tick(day, 14, m, HOSTS[0], m + 1, budget, demo=True, second=30)
@@ -79,9 +81,9 @@ def build_items(days, rng, today, demo_days=0):
     return items
 
 
-def seed(conn, days=365, rng_seed=42, demo_days=0, today=None):
+def seed(conn, days=365, rng_seed=42, demo_days=0, today=None, demo=False):
     today = today or date.today()
-    items = build_items(days, random.Random(rng_seed), today, demo_days)
+    items = build_items(days, random.Random(rng_seed), today, demo_days, demo)
     # Keep the full history, then purge so the DB looks like a real long-running install.
     result = ingest(conn, items, today, enforce_retention=False)
     try:
@@ -100,6 +102,8 @@ def main():
     p.add_argument("--reset", action="store_true", help="delete existing data first")
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--demo-days", type=int, default=0, help="add demo-flagged ticks to the last N days")
+    p.add_argument("--as-real", action="store_true",
+                   help="store the history as real usage instead of flagging it as sample data")
     args = p.parse_args()
 
     db.init_schema()
@@ -109,7 +113,7 @@ def main():
             delete_user_data(conn)
         elif _has_data(conn):
             raise SystemExit("The database already has data. Use --reset to replace it.")
-        result = seed(conn, args.days, args.seed, args.demo_days)
+        result = seed(conn, args.days, args.seed, args.demo_days, demo=not args.as_real)
         print(f"Seeded {args.days} days: {result['accepted']} ticks.")
     finally:
         conn.close()

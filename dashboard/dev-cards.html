@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cards dev page</title>
+  <link rel="stylesheet" href="../options.css">
+  <link rel="stylesheet" href="cards.css">
+  <style>main { max-width: 960px; } .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; } @media (max-width: 640px) { .two { grid-template-columns: 1fr; } }</style>
+</head>
+<body>
+  <main>
+    <div id="banner" hidden></div>
+    <div id="demo-toggle" hidden></div>
+    <div id="empty" hidden></div>
+    <p><button id="flipEmpty">Toggle empty fixtures</button> <button id="flipOffline">Toggle offline</button> <button id="flipRemote">Toggle remote</button></p>
+    <div class="two">
+      <section id="sites"></section>
+      <section id="heatmap"></section>
+    </div>
+    <section id="highlights"></section>
+    <section id="footer"></section>
+  </main>
+  <script type="module">
+    import { renderSites } from "./sites.js";
+    import { renderHeatmap } from "./heatmap.js";
+    import { renderHighlights } from "./highlights.js";
+    import { renderFooter } from "./footer.js";
+    import { setOfflineBanner, renderEmpty, clearEmpty, startOfflinePoll, startAutoRefresh, renderDemoToggle } from "./states.js";
+
+    const $ = (id) => document.getElementById(id);
+    const cells = Array.from({ length: 7 }, (_, r) =>
+      Array.from({ length: 24 }, (_, h) => (h >= 18 ? (r >= 4 ? 38.5 - (23 - h) * 5 : 8 + h - 18) : h === 12 ? 3 : 0)));
+    const full = {
+      sites: { total_minutes: 210, sites: [
+        { hostname: "stake.com", minutes: 130, share: 0.62, sessions: 4, source: "domain" },
+        { hostname: "draftkings.com", minutes: 60, share: 0.29, sessions: 2, source: "domain" },
+        { hostname: "a-very-long-hostname-for-overflow-testing.example.com", minutes: 20, share: 0.09, sessions: 1, source: "gemma" } ] },
+      heatmap: { cells, max: 38.5, partial: true },
+      summary: { range: "week", counted_days: 7, highlights: { longest_break_days: 1, best_day: { date: "2026-10-21", minutes: 12 }, clean_days: 2, under_limit_days: 6 } },
+    };
+    const empty = {
+      sites: { total_minutes: 0, sites: [] },
+      heatmap: { cells: Array.from({ length: 7 }, () => Array(24).fill(0)), max: 0, partial: false },
+      summary: { range: "month", counted_days: 0, highlights: { longest_break_days: 0, best_day: null, clean_days: 0, under_limit_days: 0 } },
+    };
+    let isEmpty = false, offline = false, remote = false;
+    function draw() {
+      const f = isEmpty ? empty : full;
+      renderSites($("sites"), f.sites, { range: f.summary.range });
+      renderHeatmap($("heatmap"), f.heatmap);
+      renderHighlights($("highlights"), f.summary);
+      renderFooter($("footer"), { deployment: remote ? "remote" : "local" }, { onDelete: async () => { console.log("delete"); } });
+      isEmpty ? renderEmpty($("empty")) : clearEmpty($("empty"));
+      setOfflineBanner($("banner"), offline);
+    }
+    $("flipEmpty").onclick = () => { isEmpty = !isEmpty; draw(); };
+    $("flipOffline").onclick = () => { offline = !offline; draw(); };
+    $("flipRemote").onclick = () => { remote = !remote; draw(); };
+    renderDemoToggle($("demo-toggle"), true, (on) => console.log("include demo", on));
+    startOfflinePoll(async () => true, () => console.log("back online"));
+    startAutoRefresh(async () => console.log("refresh"), 60000);
+    draw();
+  </script>
+</body>
+</html>

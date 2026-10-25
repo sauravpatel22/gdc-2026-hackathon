@@ -1,6 +1,6 @@
 import { getState, setState } from "./storage.js";
 import { computeHealth } from "./health.js";
-import { DEMO_MULTIPLIER } from "./config.js";
+import { DEMO_MULTIPLIER, BACKEND_URL } from "./config.js";
 
 const { stageInfo, messageFor, mascotSVG } = globalThis.Pause.pet;
 
@@ -31,7 +31,10 @@ const els = {
   siteEmpty: document.getElementById("siteEmpty"),
   limitNudge: document.getElementById("limitNudge"),
   presets: document.querySelectorAll("[data-minutes]"),
+  openDashboard: document.getElementById("openDashboard"),
 };
+
+els.openDashboard.href = `${BACKEND_URL}/`;
 
 let savedBudget = null;
 let shownStage = null;

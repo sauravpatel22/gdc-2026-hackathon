@@ -4,6 +4,7 @@ import { classifyWithGemma } from "./gemma.js";
 import { computeHealth, getPetStage } from "./health.js";
 import { DEMO_MULTIPLIER, RECOVERY_PER_HOUR } from "./config.js";
 import { refreshPetLine } from "./petLine.js";
+import { record, flush, captureBackfill } from "./sync.js";
 
 const LOW_SCORE_THRESHOLD = 0.3;
 const GEMMA_MIN_CONFIDENCE = 0.6;
@@ -81,13 +82,18 @@ async function ensureDailyReset() {
   return setState({ gamblingMinutesToday: 0, streak, lastResetDate: today });
 }
 
-async function addGamblingMinute(minutes = 1) {
+async function addGamblingMinute(minutes = 1, site = null) {
   const state = await ensureDailyReset();
+  await captureBackfill(); // before any minute is added, so nothing is counted twice
   const added = minutes * (state.demoMode ? DEMO_MULTIPLIER : 1);
   const gamblingMinutesToday = state.gamblingMinutesToday + added;
   const health = computeHealth(gamblingMinutesToday, state.budgetMinutes);
 
   await setState({ gamblingMinutesToday, health, lastGamblingAt: Date.now() });
+  if (site) await record({
+    ts: Date.now(), date: todayISO(), hostname: site.hostname, minutes: added,
+    health, budget: state.budgetMinutes, source: site.source, demo: state.demoMode,
+  });
   await updateBadge(health);
   if (minutes >= 1) console.log(
     `[PausePet] +${added} gambling min -> ${gamblingMinutesToday}/${state.budgetMinutes}, health ${health.toFixed(1)} (${getPetStage(health)})`
@@ -154,7 +160,7 @@ async function onTick(fraction = 1) {
   const entry = (await getState()).cache[hostname];
   if (entry && entry.gambling) {
     log(`[PausePet] tick: on gambling site ${hostname}`);
-    await addGamblingMinute(fraction);
+    await addGamblingMinute(fraction, { hostname, source: entry.source });
   } else {
     log(`[PausePet] tick: ${hostname} is not gambling`);
     await maybeRecover(fraction);
@@ -167,7 +173,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
   // service worker was shut down.
   syncDemoLoop().then((demo) => {
     if (!demo) return onTick();
-  }).catch((err) => console.log("[PausePet] tick error", err));
+  }).then(() => flush()).catch((err) => console.log("[PausePet] tick error", err));
 });
 
 // ---------- Demo loop ----------
@@ -201,6 +207,7 @@ async function syncDemoLoop() {
 }
 
 syncDemoLoop();
+flush(); // drain the outbox when the service worker wakes up
 
 // ---------- Page detection ----------
 

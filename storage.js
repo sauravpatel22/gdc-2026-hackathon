@@ -23,6 +23,10 @@ export function getDefaultState() {
     lastGamblingAt: null,
     petHidden: false,
     petLine: null,
+    outbox: [],
+    pendingBackfill: null,
+    syncBackfillDone: false,
+    userId: "local",
   };
 }
 

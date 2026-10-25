@@ -1,0 +1,77 @@
+/* Session E cards. Tokens come from options.css / dashboard.css :root. */
+
+.card-empty,
+.card-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--muted);
+}
+
+/* Banner */
+#banner.banner {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 14px;
+  line-height: 1.4;
+}
+#banner code { font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
+
+/* Empty state */
+#empty.empty-card {
+  margin-bottom: 20px;
+  padding: 18px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+  color: var(--text);
+  line-height: 1.4;
+}
+
+/* Demo toggle */
+.demo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+.demo-toggle input { accent-color: var(--accent-dark); }
+
+/* Most visited */
+.sites-list { margin: 10px 0 0; padding: 0; list-style: none; }
+.site-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; }
+.site-rank { width: 16px; font-size: 13px; color: var(--muted); text-align: right; }
+.site-main { flex: 1; min-width: 0; }
+.site-line { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.site-host { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.site-min { color: var(--muted); white-space: nowrap; }
+.site-track { display: block; height: 6px; margin-top: 4px; border-radius: 3px; background: var(--track); }
+.site-bar { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+/* Heatmap */
+.heatmap-svg { display: block; width: 100%; height: auto; margin-top: 8px; }
+.hm-label { font-size: 9px; fill: var(--muted); }
+.hm-cell { fill: var(--track); }
+.hm-cell.on { fill: var(--accent); }
+
+/* Highlights */
+.highlights-list { margin: 8px 0 0; padding-left: 18px; font-size: 14px; line-height: 1.6; }
+
+/* Footer */
+#footer { font-size: 13px; color: var(--muted); }
+.footer-privacy { margin: 0 0 8px; }
+.footer-links { display: flex; flex-wrap: wrap; gap: 6px 16px; margin: 0 0 12px; }
+.footer-links a { color: var(--accent-dark); }
+.footer-delete { font-size: 13px; }
+.footer-delete.armed { border-color: var(--warn-text); background: var(--warn-bg); color: var(--warn-text); }
+#footer a:focus-visible,
+.demo-toggle input:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}

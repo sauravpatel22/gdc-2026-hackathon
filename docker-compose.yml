@@ -1,0 +1,11 @@
+services:
+  testudo:
+    build: .
+    ports: ["127.0.0.1:8000:8000"]
+    volumes: ["testudo-data:/data"]
+    environment:
+      TESTUDO_DB: /data/testudo.db
+      TESTUDO_DEPLOYMENT: local
+    restart: unless-stopped
+volumes:
+  testudo-data:

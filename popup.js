@@ -1,5 +1,47 @@
-import { getState } from "./storage.js";
+import { getState, setState } from "./storage.js";
 
-const state = await getState();
-document.getElementById("status").textContent =
-  `Hi there. Health: ${state.health}`;
+const { stageInfo, pigeonSVG } = globalThis.Pause.pet;
+
+const els = {
+  pet: document.getElementById("pet"),
+  message: document.getElementById("message"),
+  fill: document.getElementById("fill"),
+  healthText: document.getElementById("healthText"),
+  stageLabel: document.getElementById("stageLabel"),
+  today: document.getElementById("today"),
+  showPet: document.getElementById("showPet"),
+};
+
+let shownStage = null;
+
+function render(state) {
+  const info = stageInfo(state.health);
+
+  if (shownStage !== info.stage) {
+    els.pet.innerHTML = pigeonSVG(info.stage);
+    shownStage = info.stage;
+  }
+  els.pet.className = `pet ${info.stage}`;
+  els.message.textContent = info.message;
+
+  els.fill.style.width = `${info.health}%`;
+  els.fill.style.background = info.color;
+  els.healthText.textContent = `${Math.round(info.health)} / 100`;
+  els.stageLabel.textContent = info.label;
+  els.stageLabel.style.color = info.color;
+
+  els.today.textContent =
+    `Today: ${Math.round(state.gamblingMinutesToday)} of ${state.budgetMinutes} minutes`;
+  els.showPet.checked = !state.petHidden;
+}
+
+els.showPet.addEventListener("change", () => {
+  setState({ petHidden: !els.showPet.checked });
+});
+
+// Keep the popup live while it's open.
+chrome.storage.onChanged.addListener(async (_changes, area) => {
+  if (area === "local") render(await getState());
+});
+
+render(await getState());

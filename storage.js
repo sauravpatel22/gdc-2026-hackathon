@@ -21,6 +21,7 @@ export function getDefaultState() {
     cooldowns: {},
     pausesThisWeek: 0,
     lastGamblingAt: null,
+    petHidden: false,
   };
 }
 

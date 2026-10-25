@@ -7,9 +7,28 @@
 </head>
 <body>
   <main>
-    <h1>PausePet</h1>
-    <p id="status">Hi there. I'm here with you.</p>
+    <div id="pet" class="pet"></div>
+    <p id="message" class="message"></p>
+
+    <div class="bar" aria-label="Pet health">
+      <div id="fill" class="fill"></div>
+      <span class="mark" style="left: 20%"></span>
+      <span class="mark" style="left: 50%"></span>
+      <span class="mark" style="left: 80%"></span>
+    </div>
+    <div class="bar-labels">
+      <span id="healthText"></span>
+      <span id="stageLabel"></span>
+    </div>
+
+    <p id="today" class="small"></p>
+
+    <label class="toggle">
+      <input type="checkbox" id="showPet" />
+      Show my pigeon on web pages
+    </label>
   </main>
+  <script src="pet.js"></script>
   <script type="module" src="popup.js"></script>
 </body>
 </html>

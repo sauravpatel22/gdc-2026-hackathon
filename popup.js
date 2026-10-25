@@ -1,6 +1,6 @@
 import { getState, setState } from "./storage.js";
 
-const { stageInfo, pigeonSVG } = globalThis.Pause.pet;
+const { stageInfo, mascotSVG } = globalThis.Pause.pet;
 
 const els = {
   pet: document.getElementById("pet"),
@@ -18,7 +18,7 @@ function render(state) {
   const info = stageInfo(state.health);
 
   if (shownStage !== info.stage) {
-    els.pet.innerHTML = pigeonSVG(info.stage);
+    els.pet.innerHTML = mascotSVG(info.stage);
     shownStage = info.stage;
   }
   els.pet.className = `pet ${info.stage}`;

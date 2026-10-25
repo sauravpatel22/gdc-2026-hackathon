@@ -39,54 +39,64 @@ globalThis.Pause = globalThis.Pause || {};
     return { stage, health: value, ...STAGES[stage] };
   }
 
+  // Eye center is (91, 53) on the terrapin's head.
   function eyes(stage) {
     if (stage === "happy") {
-      return `<circle cx="76" cy="37" r="3.6" fill="#f08a24"/><circle cx="76.6" cy="37" r="1.8" fill="#222"/><circle cx="77.4" cy="36" r="0.7" fill="#fff"/>`;
+      return `<circle cx="91" cy="53" r="3.2" fill="#fff"/><circle cx="91.8" cy="53" r="1.9" fill="#222"/><circle cx="92.4" cy="52.2" r="0.7" fill="#fff"/>`;
     }
     if (stage === "tired") {
-      return `<circle cx="76" cy="38" r="3.6" fill="#f08a24"/><circle cx="76.6" cy="38.4" r="1.8" fill="#222"/><path d="M71.6 36.6 Q76 34 80.4 36.6 L80.4 38 L71.6 38 Z" fill="#8e98a3"/><path d="M71.6 37.4 L80.4 37.4" stroke="#555" stroke-width="1" stroke-linecap="round"/>`;
+      return `<circle cx="91" cy="53.6" r="3.2" fill="#fff"/><circle cx="91.8" cy="54" r="1.9" fill="#222"/><path d="M87.6 52.2 Q91 50 94.6 52.2 L94.6 53.6 L87.6 53.6 Z" fill="#7d8a5a"/>`;
     }
     if (stage === "sick") {
-      return `<path d="M72.5 35.5 L79.5 40.5 M79.5 35.5 L72.5 40.5" stroke="#444" stroke-width="2" stroke-linecap="round"/>`;
+      return `<path d="M88.5 50.5 L94 56 M94 50.5 L88.5 56" stroke="#444" stroke-width="1.8" stroke-linecap="round"/>`;
     }
-    return `<path d="M72 38 Q76 41.5 80 38" stroke="#444" stroke-width="2" fill="none" stroke-linecap="round"/>`;
+    return `<path d="M88 53.5 Q91 56 94.4 53.5" stroke="#333" stroke-width="1.8" fill="none" stroke-linecap="round"/>`;
+  }
+
+  function mouth(stage) {
+    if (stage === "happy") return `<path d="M90 60 Q94.5 63.5 98 59.5" stroke="#4a3b22" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+    if (stage === "sick") return `<path d="M90.5 61.5 Q94 59.5 97.5 61.5" stroke="#4a3b22" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+    return `<path d="M90.5 60.5 L97 60.5" stroke="#4a3b22" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
   }
 
   function extras(stage) {
     if (stage === "happy") {
-      return `<circle cx="70" cy="44" r="3" fill="#f4a3b0" opacity="0.7"/>`;
+      return `<circle cx="86" cy="58.5" r="2.6" fill="#f4a3b0" opacity="0.7"/>`;
     }
     if (stage === "sick") {
-      return `<path d="M88 22 Q91 27 88 29 Q85 27 88 22 Z" fill="#7ec8e3"/><path d="M60 26 Q63 24 66 26" stroke="#7a8f6a" stroke-width="1.5" fill="none" stroke-linecap="round"/>`;
+      return `<path d="M96 38 Q99 43 96 45 Q93 43 96 38 Z" fill="#7ec8e3"/>`;
     }
     if (stage === "asleep") {
-      return `<text x="84" y="26" font-size="12" font-weight="bold" fill="#6b7a99" font-family="sans-serif">z</text><text x="91" y="15" font-size="9" font-weight="bold" fill="#8c9ab8" font-family="sans-serif">z</text>`;
+      return `<text x="80" y="42" font-size="12" font-weight="bold" fill="#6b7a99" font-family="sans-serif">z</text><text x="87" y="32" font-size="9" font-weight="bold" fill="#8c9ab8" font-family="sans-serif">z</text>`;
     }
     return "";
   }
 
-  function pigeonSVG(stage) {
-    const body = { happy: "#9aa3ad", tired: "#9aa3ad", sick: "#a7b79b", asleep: "#8f98a8" }[stage] || "#9aa3ad";
-    const wing = { happy: "#7f8893", tired: "#7f8893", sick: "#8c9c80", asleep: "#767f90" }[stage] || "#7f8893";
-    const droop = stage === "sick" || stage === "asleep" ? ' transform="rotate(6 72 40)"' : "";
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Pigeon, ${stage}">
-  <path d="M22 58 L4 50 L6 66 Z" fill="${wing}"/>
-  <ellipse cx="48" cy="62" rx="30" ry="21" fill="${body}"/>
-  <ellipse cx="50" cy="70" rx="20" ry="11" fill="#c3cad1" opacity="0.7"/>
-  <path d="M26 60 Q42 46 64 62 Q46 78 26 60 Z" fill="${wing}"/>
-  <path d="M30 60 L58 61" stroke="#59606b" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  // Testudo, the University of Maryland's diamondback terrapin.
+  function mascotSVG(stage) {
+    const skin = { happy: "#b9a77a", tired: "#b9a77a", sick: "#a9b88a", asleep: "#a89c7c" }[stage] || "#b9a77a";
+    const shell = { happy: "#e21833", tired: "#d3243a", sick: "#c4485a", asleep: "#b52a3c" }[stage] || "#e21833";
+    const gold = "#ffd520";
+    const droop = stage === "sick" || stage === "asleep" ? ' transform="rotate(8 78 62)"' : "";
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="Testudo the terrapin, ${stage}">
+  <path d="M7 68 L0 73 L8 73 Z" fill="${skin}"/>
+  <ellipse cx="22" cy="77" rx="7" ry="5" fill="${skin}"/>
+  <ellipse cx="62" cy="77" rx="7" ry="5" fill="${skin}"/>
+  <path d="M10 66 Q10 26 43 26 Q76 26 76 66 Z" fill="${shell}"/>
+  <path d="M30 38 L56 38 L63 53 L43 62 L23 53 Z" fill="none" stroke="${gold}" stroke-width="2.2" stroke-linejoin="round"/>
+  <path d="M30 38 L24 28 M56 38 L62 28 M63 53 L74 54 M23 53 L12 54 M43 62 L43 66" stroke="${gold}" stroke-width="2" stroke-linecap="round" fill="none"/>
+  <path d="M6 64 L80 64 Q80 74 72 74 L14 74 Q6 74 6 64 Z" fill="${gold}"/>
+  <path d="M6 64 L80 64" stroke="#b8860b" stroke-width="1.2" opacity="0.6"/>
   <g${droop}>
-    <ellipse cx="66" cy="50" rx="9" ry="8" fill="#6fae9a"/>
-    <ellipse cx="64" cy="52" rx="5" ry="4" fill="#9a7fb8" opacity="0.6"/>
-    <circle cx="73" cy="39" r="14" fill="${body}"/>
-    <path d="M85 36 L97 41 L85 45 Z" fill="#e9a96b"/>
-    <circle cx="86" cy="38" r="1.6" fill="#f1ede6"/>
+    <ellipse cx="78" cy="62" rx="8" ry="7" fill="${skin}"/>
+    <ellipse cx="88" cy="56" rx="10.5" ry="9" fill="${skin}"/>
+    <path d="M80 52 Q86 48 92 49" stroke="#6f6140" stroke-width="1.2" fill="none" opacity="0.5" stroke-linecap="round"/>
     ${eyes(stage)}
+    ${mouth(stage)}
     ${extras(stage)}
   </g>
-  <path d="M42 82 L40 92 M37 92 L43 92 M54 82 L55 92 M52 92 L58 92" stroke="#e07a8a" stroke-width="2.2" stroke-linecap="round" fill="none"/>
 </svg>`;
   }
 
-  globalThis.Pause.pet = { STAGES, getStage, stageInfo, pigeonSVG };
+  globalThis.Pause.pet = { STAGES, getStage, stageInfo, mascotSVG };
 })();

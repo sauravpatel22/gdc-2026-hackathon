@@ -6,8 +6,8 @@ Right now the extension does four things:
 
 1. **Detects gambling pages.** First a known-domain list and a keyword score, and for unclear pages, a local Gemma model (through Ollama). Results are cached per hostname.
 2. **Tracks time on gambling pages** once a minute and turns it into a pet "health" value, shown on the toolbar badge.
-3. **Shows a pigeon in the popup.** It has a health bar and a message that match the health range.
-4. **Floats the pigeon on web pages**, with no background, until you hide it.
+3. **Shows a Testudo in the popup.** It has a health bar and a message that match the health range.
+4. **Floats the Testudo on web pages**, with no background, until you hide it.
 
 ## How the pieces fit together
 
@@ -19,10 +19,10 @@ Right now the extension does four things:
 │ sends page info      │ ◀────────────── │ not, writes cache    │        └─────────┬──────────┘
 │                      │   { gambling,   │ uses domains.js and  │                  │ health, petHidden
 │ petOverlay.js        │     source }    │ classifier.js (Gemma)│                  │ (read + live updates)
-│ floating pigeon  ◀───┼─────────────────┼──────────────────────┼──────────────────┤
+│ floating Testudo  ◀───┼─────────────────┼──────────────────────┼──────────────────┤
 └──────────────────────┘                 │ "tick" alarm, 1/min  │          ┌───────┴───────┐
                                          │  idle? active tab?   │          │ popup.js      │
- chrome.alarms ────────────────────────▶ │  gambling? health    │          │ pigeon, bar,  │
+ chrome.alarms ────────────────────────▶ │  gambling? health    │          │ Testudo, bar,  │
                                          │  uses health.js      │          │ message       │
                                          └──────────┬───────────┘          └───────────────┘
                                                     ▼
@@ -31,7 +31,7 @@ Right now the extension does four things:
  pet.js (drawing, colors, messages) is loaded by both petOverlay.js and the popup.
 ```
 
-The pigeon UI never talks to the service worker. It reads `health` and `petHidden` from storage and re-renders when they change.
+The Testudo UI never talks to the service worker. It reads `health` and `petHidden` from storage and re-renders when they change.
 
 Two kinds of script, and the difference matters:
 
@@ -93,7 +93,7 @@ Asks the local Gemma model whether a page is a gambling site. Used only for page
 - **`parseReply(text)`** (internal) strips any code fences the model adds, parses the JSON, and checks that `gambling` is a boolean and `confidence` is a number from 0 to 1. Otherwise it returns `null`. `type` is one of `sportsbook`, `casino`, `poker`, `lottery`, `other`, or `none`.
 
 ### `pet.js`
-Shared pigeon code for the popup and the floating pigeon. It's a classic script that sets `globalThis.Pause.pet`.
+Shared Testudo code for the popup and the floating Testudo. It's a classic script that sets `globalThis.Pause.pet`.
 
 - **`STAGES`** holds the color, label, and message for each stage:
 
@@ -106,15 +106,15 @@ Shared pigeon code for the popup and the floating pigeon. It's a classic script 
 
 - **`getStage(health)`** returns the stage name. These thresholds mirror `getPetStage()` in `health.js`. They're duplicated because classic scripts can't import it, so change both together.
 - **`stageInfo(health)`** clamps health to 0–100 (and treats a missing value as 100) and returns `{ stage, health, color, label, message }`.
-- **`pigeonSVG(stage)`** returns an inline SVG pigeon. The face and body change by stage: happy eyes and blushing cheeks, half-closed eyes, a greenish body with a sweat drop, or closed eyes with "z"s.
+- **`TestudoSVG(stage)`** returns an inline SVG Testudo. The face and body change by stage: happy eyes and blushing cheeks, half-closed eyes, a greenish body with a sweat drop, or closed eyes with "z"s.
 
 ### `petOverlay.js`
-The floating pigeon on web pages. A classic script that depends on `pet.js`.
+The floating Testudo on web pages. A classic script that depends on `pet.js`.
 
 - It builds a fixed-position element at the bottom-right of the page, inside a closed Shadow DOM so the site's CSS can't affect it.
-- **Clicking the pigeon** opens or closes a small card with the message, health bar, and number. **Clicking anywhere else** on the page closes the card. The pigeon stays.
-- **"Hide my pigeon"** on the card sets `petHidden: true`. The popup checkbox turns it back on.
-- **`render(state)`** (internal) removes the pigeon if `petHidden` is true. Otherwise it creates it if needed and updates the pigeon, message, bar, and label.
+- **Clicking the Testudo** opens or closes a small card with the message, health bar, and number. **Clicking anywhere else** on the page closes the card. The Testudo stays.
+- **"Hide my Testudo"** on the card sets `petHidden: true`. The popup checkbox turns it back on.
+- **`render(state)`** (internal) removes the Testudo if `petHidden` is true. Otherwise it creates it if needed and updates the Testudo, message, bar, and label.
 - **`refresh()`** (internal) reads `health` and `petHidden` from storage and calls `render`. It runs once on load and again whenever `chrome.storage.onChanged` reports a change to either field. It's wrapped in try/catch, so a reloaded extension never breaks the page.
 
 ### `content.js`
@@ -176,12 +176,12 @@ The service worker. It decides whether a page is gambling, and tracks time spent
 - **`debugTick()`** runs `onTick()` immediately instead of waiting for the alarm.
 
 ### `popup.html`, `popup.js`, `popup.css`
-The toolbar popup. It shows the pigeon, a message, a health bar, and a checkbox.
-- `popup.html` is the markup: the pigeon, the message, a bar with marks at 20, 50, and 80, the health number and stage label, a "Today: X of Y minutes" line, and a "Show my pigeon on web pages" checkbox. It loads `pet.js` as a classic script and `popup.js` as a module.
-- `popup.js` has one main function, **`render(state)`**. It draws the right pigeon, the message, the bar width and color, the labels, and the checkbox from `getState()`. It redraws the SVG only when the stage changes. It re-renders whenever `chrome.storage.onChanged` fires, so it stays live while open. The checkbox calls `setState({ petHidden })`.
-- `popup.css` styles the layout: a gentle bobbing animation for the pigeon (off if the user prefers reduced motion), the bar, and the labels.
+The toolbar popup. It shows the Testudo, a message, a health bar, and a checkbox.
+- `popup.html` is the markup: the Testudo, the message, a bar with marks at 20, 50, and 80, the health number and stage label, a "Today: X of Y minutes" line, and a "Show my Testudo on web pages" checkbox. It loads `pet.js` as a classic script and `popup.js` as a module.
+- `popup.js` has one main function, **`render(state)`**. It draws the right Testudo, the message, the bar width and color, the labels, and the checkbox from `getState()`. It redraws the SVG only when the stage changes. It re-renders whenever `chrome.storage.onChanged` fires, so it stays live while open. The checkbox calls `setState({ petHidden })`.
+- `popup.css` styles the layout: a gentle bobbing animation for the Testudo (off if the user prefers reduced motion), the bar, and the labels.
 
-A normal Chrome popup always has a background and closes when you click away, so it can't "hover". That's what the floating pigeon in `petOverlay.js` is for.
+A normal Chrome popup always has a background and closes when you click away, so it can't "hover". That's what the floating Testudo in `petOverlay.js` is for.
 
 ### `icons/`
 Placeholder orange-circle PNGs (`icon16.png`, `icon48.png`, `icon128.png`) used for the toolbar and extensions page.
@@ -193,7 +193,7 @@ The shape is defined in `getDefaultState()`. These fields are written so far:
 - `cache`: per-hostname gambling decisions (below).
 - `health`, `gamblingMinutesToday`, `lastGamblingAt`: updated by the time tracker.
 - `streak`, `lastResetDate`: updated by the daily reset.
-- `petHidden`: set by the popup checkbox and the floating pigeon's "Hide my pigeon" button.
+- `petHidden`: set by the popup checkbox and the floating Testudo's "Hide my Testudo" button.
 - `demoMode`, `enabled`: read by the time tracker, but nothing sets them yet. You can flip them from the console with `chrome.storage.local.set({ demoMode: true })`.
 
 Cache example:

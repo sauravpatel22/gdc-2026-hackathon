@@ -1,4 +1,4 @@
-// Classic script. Floating pigeon on web pages, inside a Shadow DOM so the
+// Classic script. Floating Testudo on web pages, inside a Shadow DOM so the
 // host site's CSS can't touch it. Reads health straight from chrome.storage.
 (() => {
   const pet = globalThis.Pause && globalThis.Pause.pet;
@@ -73,7 +73,7 @@
           <p class="msg"></p>
           <div class="bar"><div class="fill"></div></div>
           <div class="row"><span class="num"></span><span class="label"></span></div>
-          <button class="hide" type="button">Hide my pigeon</button>
+          <button class="hide" type="button">Hide Testudo</button>
         </div>
         <button class="bird" type="button" aria-label="Open PausePet"></button>
       </div>`;
@@ -121,7 +121,7 @@
     const health = typeof state.health === "number" ? state.health : 100;
     const info = pet.stageInfo(health);
     if (shownStage !== info.stage) {
-      refs.bird.innerHTML = pet.pigeonSVG(info.stage);
+      refs.bird.innerHTML = pet.mascotSVG(info.stage);
       shownStage = info.stage;
     }
     refs.msg.textContent = info.message;

@@ -8,55 +8,105 @@
 </head>
 <body>
   <main>
-    <h1>PausePet settings</h1>
-    <p class="lead">Make it yours. You can change any of this at any time.</p>
+    <header class="hero">
+      <div id="heroPet" class="hero-pet"></div>
+      <div class="hero-text">
+        <h1>PausePet settings</h1>
+        <p id="heroMessage" class="lead">Make it yours. You can change any of this at any time.</p>
+      </div>
+    </header>
+
+    <section class="today" aria-label="Today so far">
+      <div class="today-top">
+        <span class="today-title">Today so far</span>
+        <span id="todayText" class="today-num"></span>
+      </div>
+      <div class="bar" role="progressbar" aria-label="Testudo's health" aria-valuemin="0" aria-valuemax="100">
+        <div id="todayFill" class="fill"></div>
+      </div>
+      <p id="todayHint" class="hint"></p>
+    </section>
 
     <form id="form">
       <section>
-        <h2>Daily time limit</h2>
-        <label for="budget">Minutes on gambling sites per day</label>
+        <h2><span class="ico" aria-hidden="true">⏱️</span> Daily time limit</h2>
+        <p class="sub">The most time you want to spend on gambling sites in a day. Smaller is stronger.</p>
+
+        <div class="presets" role="group" aria-label="Quick picks">
+          <button type="button" class="chip" data-minutes="15">15 min</button>
+          <button type="button" class="chip" data-minutes="30">30 min</button>
+          <button type="button" class="chip" data-minutes="60">1 hr</button>
+          <button type="button" class="chip" data-minutes="120">2 hr</button>
+          <button type="button" class="chip" data-minutes="180">3 hr</button>
+        </div>
+
+        <input id="budgetRange" class="range" type="range" min="10" max="360" step="5" aria-label="Daily limit slider" />
+
         <div class="row">
+          <label for="budget" class="inline">Minutes</label>
           <input id="budget" type="number" min="10" max="1440" step="5" required />
           <span id="budgetHint" class="hint"></span>
         </div>
-        <p class="hint">Your pigeon's health goes down as you get closer to this number, and starts fresh each day.</p>
+
+        <p id="limitNudge" class="nudge" hidden></p>
+        <p class="hint">Testudo's health goes down as you get closer to this number, and starts fresh each day.</p>
       </section>
 
       <section>
-        <h2>Your pigeon</h2>
-        <label class="check"><input id="enabled" type="checkbox" /> Keep an eye on my time</label>
-        <label class="check"><input id="showPet" type="checkbox" /> Show my pigeon on web pages</label>
+        <h2><span class="ico" aria-hidden="true">🐢</span> Your Testudo</h2>
+        <label class="switch">
+          <input id="enabled" type="checkbox" />
+          <span class="track" aria-hidden="true"></span>
+          <span class="switch-text"><strong>Keep an eye on my time</strong><small>Tracks gambling sites and updates Testudo.</small></span>
+        </label>
+        <label class="switch">
+          <input id="showPet" type="checkbox" />
+          <span class="track" aria-hidden="true"></span>
+          <span class="switch-text"><strong>Show Testudo on web pages</strong><small>A friendly reminder that follows you around.</small></span>
+        </label>
       </section>
 
-      <section>
-        <h2>Your reason</h2>
-        <label for="reason">Why do you want to take breaks? (Only you see this.)</label>
-        <textarea id="reason" rows="3" maxlength="200" placeholder="For example: more time with family"></textarea>
-      </section>
-
-      <section>
-        <h2>Testing</h2>
-        <label class="check"><input id="demoMode" type="checkbox" /> <span id="demoLabel">Demo mode</span></label>
+      <section class="dev">
+        <details>
+          <summary><span class="ico" aria-hidden="true">🧪</span> Testing</summary>
+          <label class="switch">
+            <input id="demoMode" type="checkbox" />
+            <span class="track" aria-hidden="true"></span>
+            <span class="switch-text"><strong id="demoLabel">Demo mode</strong></span>
+          </label>
+        </details>
       </section>
 
       <div class="actions">
-        <button type="submit" class="primary">Save</button>
         <span id="status" class="status" role="status" aria-live="polite"></span>
+        <button type="submit" class="primary">Save changes</button>
       </div>
     </form>
 
     <section class="tools">
-      <h2>Fresh starts</h2>
+      <h2><span class="ico" aria-hidden="true">🌱</span> Fresh starts</h2>
       <div class="tool">
         <button type="button" id="resetToday">Start today fresh</button>
-        <span class="hint">Sets today's minutes to 0 and your pigeon's health to 100.</span>
+        <span class="hint">Sets today's minutes to 0 and Testudo's health to 100.</span>
       </div>
       <div class="tool">
         <button type="button" id="clearCache">Forget remembered sites</button>
         <span class="hint">PausePet will look at each site again next time you visit.</span>
       </div>
     </section>
+
+    <section class="help">
+      <h2><span class="ico" aria-hidden="true">🤝</span> Need to talk to someone?</h2>
+      <p class="sub">Struggling is common, and support is free and confidential. You don't have to do this alone.</p>
+      <ul>
+        <li>US: National Problem Gambling Helpline, call or text <strong>1-800-522-4700</strong> (24/7)</li>
+        <li>Chat online at <a href="https://www.ncpgambling.org/help-treatment/chat/" target="_blank" rel="noopener">ncpgambling.org</a></li>
+      </ul>
+    </section>
+
+    <p class="privacy">🔒 Everything here stays on your device.</p>
   </main>
+  <script src="pet.js"></script>
   <script type="module" src="options.js"></script>
 </body>
 </html>

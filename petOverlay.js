@@ -40,6 +40,16 @@
       line-height: 1.4;
     }
     .card[hidden] { display: none; }
+    .demo {
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #3a3a3a;
+      color: #ffd520;
+      font-size: 11px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+    .demo[hidden] { display: none; }
     .msg { margin: 0 0 10px; }
     .bar { height: 10px; border-radius: 5px; background: #ece6dc; overflow: hidden; }
     .fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background 0.4s ease; }
@@ -75,6 +85,7 @@
           <div class="row"><span class="num"></span><span class="label"></span></div>
           <button class="hide" type="button">Hide Testudo</button>
         </div>
+        <div class="demo" hidden></div>
         <button class="bird" type="button" aria-label="Open PausePet"></button>
       </div>`;
 
@@ -85,6 +96,7 @@
       num: root.querySelector(".num"),
       label: root.querySelector(".label"),
       bird: root.querySelector(".bird"),
+      demo: root.querySelector(".demo"),
       hide: root.querySelector(".hide"),
     };
 
@@ -130,11 +142,21 @@
     refs.num.textContent = `${Math.round(info.health)} / 100`;
     refs.label.textContent = info.label;
     refs.label.style.color = info.color;
+
+    refs.demo.hidden = !state.demoMode;
+    if (state.demoMode) {
+      const minutes = Math.round(state.gamblingMinutesToday || 0);
+      refs.demo.textContent = `DEMO · ${minutes} of ${state.budgetMinutes || 120} min · health ${Math.round(info.health)}`;
+    }
   }
+
+  const KEYS = [
+    "health", "petHidden", "demoMode", "gamblingMinutesToday", "budgetMinutes",
+  ];
 
   async function refresh() {
     try {
-      render(await chrome.storage.local.get(["health", "petHidden"]));
+      render(await chrome.storage.local.get(KEYS));
     } catch (_) {
       // Extension was reloaded; leave the page alone.
     }
@@ -142,7 +164,7 @@
 
   try {
     chrome.storage.onChanged.addListener((changes, area) => {
-      if (area === "local" && (changes.health || changes.petHidden)) refresh();
+      if (area === "local" && KEYS.some((k) => changes[k])) refresh();
     });
   } catch (_) {}
 

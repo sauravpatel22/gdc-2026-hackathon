@@ -21,6 +21,7 @@ const els = {
   heroPet: document.getElementById("heroPet"),
   heroMessage: document.getElementById("heroMessage"),
   todayText: document.getElementById("todayText"),
+  demoBadge: document.getElementById("demoBadge"),
   todayFill: document.getElementById("todayFill"),
   todayHint: document.getElementById("todayHint"),
   budgetRange: document.getElementById("budgetRange"),
@@ -31,6 +32,7 @@ const els = {
 let savedBudget = null;
 let shownStage = null;
 let todayMinutes = 0;
+let savedHealth = 100;
 
 els.demoLabel.textContent = `Demo mode (time moves ${DEMO_MULTIPLIER}x faster, for trying things out)`;
 
@@ -67,7 +69,9 @@ function updateBudgetHint() {
 // Hero pet and "today" bar reflect today's real minutes against the limit shown in the form.
 function renderToday(budget) {
   if (!budget) return;
-  const health = computeHealth(todayMinutes, budget);
+  const minutes = todayMinutes;
+  // Use the tracker's real health while the form's limit matches the saved one.
+  const health = budget === savedBudget ? savedHealth : computeHealth(minutes, budget);
   const info = stageInfo(health);
   if (shownStage !== info.stage) {
     els.heroPet.innerHTML = mascotSVG(info.stage);
@@ -78,8 +82,9 @@ function renderToday(budget) {
   els.todayFill.style.width = `${info.health}%`;
   els.todayFill.style.background = info.color;
   els.todayFill.parentElement.setAttribute("aria-valuenow", String(Math.round(info.health)));
-  els.todayText.textContent = `${Math.round(todayMinutes)} of ${budget} min`;
-  const left = Math.max(0, Math.round(budget - todayMinutes));
+  els.todayText.textContent = `${Math.round(minutes)} of ${budget} min · health ${Math.round(info.health)}`;
+  els.demoBadge.hidden = !els.demoMode.checked;
+  const left = Math.max(0, Math.round(budget - minutes));
   els.todayHint.textContent = left > 0
     ? `${formatMinutes(left)} left before Testudo needs to rest. Less is always okay too.`
     : "You've reached your limit for today. Testudo is resting, and tomorrow is a fresh start.";
@@ -95,6 +100,7 @@ async function load() {
   const state = await getState();
   savedBudget = state.budgetMinutes;
   todayMinutes = state.gamblingMinutesToday;
+  savedHealth = state.health;
   els.budget.value = state.budgetMinutes;
   els.enabled.checked = state.enabled;
   els.showPet.checked = !state.petHidden;
@@ -103,6 +109,16 @@ async function load() {
 }
 
 els.budget.addEventListener("input", updateBudgetHint);
+els.demoMode.addEventListener("change", updateBudgetHint);
+
+// Keep today's minutes live while the settings page is open (demo mode moves fast).
+chrome.storage.onChanged.addListener(async (_changes, area) => {
+  if (area !== "local") return;
+  const state = await getState();
+  todayMinutes = state.gamblingMinutesToday;
+  savedHealth = state.health;
+  updateBudgetHint();
+});
 els.budgetRange.addEventListener("input", () => {
   els.budget.value = els.budgetRange.value;
   updateBudgetHint();

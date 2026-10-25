@@ -53,9 +53,11 @@ async function updateBadge(health) {
 
 // Keep the badge in sync when health changes from anywhere (e.g. the settings page).
 chrome.storage.onChanged.addListener((changes, area) => {
-  if (area === "local" && changes.health && typeof changes.health.newValue === "number") {
+  if (area !== "local") return;
+  if (changes.health && typeof changes.health.newValue === "number") {
     updateBadge(changes.health.newValue);
   }
+  if (changes.demoMode) syncDemoLoop();
 });
 
 // ---------- Time tracking ----------
@@ -81,28 +83,30 @@ async function addGamblingMinute(minutes = 1) {
 
   await setState({ gamblingMinutesToday, health, lastGamblingAt: Date.now() });
   await updateBadge(health);
-  console.log(
+  if (minutes >= 1) console.log(
     `[PausePet] +${added} gambling min -> ${gamblingMinutesToday}/${state.budgetMinutes}, health ${health.toFixed(1)} (${getPetStage(health)})`
   );
 }
 
-async function maybeRecover() {
+async function maybeRecover(fraction = 1) {
   const state = await getState();
   if (state.health >= 100) return;
 
+  const multiplier = state.demoMode ? DEMO_MULTIPLIER : 1;
+  const delayMs = RECOVERY_DELAY_MS / multiplier;
   const sinceGambling = Date.now() - (state.lastGamblingAt ?? 0);
-  if (state.lastGamblingAt !== null && sinceGambling < RECOVERY_DELAY_MS) {
-    console.log(
-      `[PausePet] no recovery yet (${Math.round(sinceGambling / 60000)} of 10 min since last gambling)`
+  if (state.lastGamblingAt !== null && sinceGambling < delayMs) {
+    if (fraction >= 1) console.log(
+      `[PausePet] no recovery yet (${Math.round(sinceGambling / 1000)}s of ${Math.round(delayMs / 1000)}s since last gambling)`
     );
     return;
   }
 
-  const gain = (RECOVERY_PER_HOUR / 60) * (state.demoMode ? DEMO_MULTIPLIER : 1);
+  const gain = (RECOVERY_PER_HOUR / 60) * multiplier * fraction;
   const health = Math.min(100, state.health + gain);
   await setState({ health });
   await updateBadge(health);
-  console.log(
+  if (fraction >= 1) console.log(
     `[PausePet] recovered +${gain.toFixed(2)} -> health ${health.toFixed(1)} (${getPetStage(health)})`
   );
 }
@@ -119,13 +123,16 @@ async function getActiveHostname() {
   }
 }
 
-async function onTick() {
+// `fraction` is how much of a minute this tick represents (1 for the alarm, 1/60 for the
+// once-a-second demo loop).
+async function onTick(fraction = 1) {
+  const log = fraction >= 1 ? (...args) => console.log(...args) : () => {};
   const state = await getState();
   if (!state.enabled) return;
 
   const idleState = await chrome.idle.queryState(IDLE_SECONDS);
   if (idleState !== "active") {
-    console.log(`[PausePet] tick skipped (user is ${idleState})`);
+    log(`[PausePet] tick skipped (user is ${idleState})`);
     return;
   }
 
@@ -133,24 +140,60 @@ async function onTick() {
 
   const hostname = await getActiveHostname();
   if (!hostname) {
-    console.log("[PausePet] tick: no active web page");
-    return maybeRecover();
+    log("[PausePet] tick: no active web page");
+    return maybeRecover(fraction);
   }
 
   const entry = (await getState()).cache[hostname];
   if (entry && entry.gambling) {
-    console.log(`[PausePet] tick: on gambling site ${hostname}`);
-    await addGamblingMinute();
+    log(`[PausePet] tick: on gambling site ${hostname}`);
+    await addGamblingMinute(fraction);
   } else {
-    console.log(`[PausePet] tick: ${hostname} is not gambling`);
-    await maybeRecover();
+    log(`[PausePet] tick: ${hostname} is not gambling`);
+    await maybeRecover(fraction);
   }
 }
 
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== TICK_ALARM) return;
-  onTick().catch((err) => console.log("[PausePet] tick error", err));
+  // In demo mode the once-a-second loop does the work; the alarm just restarts it if the
+  // service worker was shut down.
+  syncDemoLoop().then((demo) => {
+    if (!demo) return onTick();
+  }).catch((err) => console.log("[PausePet] tick error", err));
 });
+
+// ---------- Demo loop ----------
+// Demo mode ticks every second (each worth 1/60 of a minute, times DEMO_MULTIPLIER), so the
+// badge and every UI move continuously instead of once a minute.
+
+let demoTimer = null;
+let demoBusy = false;
+
+async function syncDemoLoop() {
+  const { demoMode } = await getState();
+  if (demoMode && !demoTimer) {
+    demoTimer = setInterval(async () => {
+      if (demoBusy) return;
+      demoBusy = true;
+      try {
+        await onTick(1 / 60);
+      } catch (err) {
+        console.log("[PausePet] demo tick error", err);
+      } finally {
+        demoBusy = false;
+      }
+    }, 1000);
+    console.log("[PausePet] demo loop started");
+  } else if (!demoMode && demoTimer) {
+    clearInterval(demoTimer);
+    demoTimer = null;
+    console.log("[PausePet] demo loop stopped");
+  }
+  return demoMode;
+}
+
+syncDemoLoop();
 
 // ---------- Page detection ----------
 

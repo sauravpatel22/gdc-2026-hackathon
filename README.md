@@ -25,6 +25,27 @@ ollama pull gemma4:e2b
 
 Then open `chrome://extensions`, enable Developer mode, and click **Load unpacked**.
 
+## Dashboard
+
+An optional local dashboard shows your history over days, weeks, months, and a year. The extension works fine without it; it just keeps a small queue and sends it when the server is up.
+
+```sh
+# with Docker
+docker compose up -d --build
+
+# or locally, from the repo root
+python3 -m venv .venv && .venv/bin/pip install -r server/requirements-dev.txt
+.venv/bin/uvicorn server.app:app --port 8000
+```
+
+Open http://localhost:8000/. The extension's popup and settings page have an "Open dashboard" link.
+
+- **Fake history for a demo:** `.venv/bin/python -m server.seed --days 365 --reset` (in Docker: `docker compose exec testudo python -m server.seed --days 365 --reset`).
+- **Export:** the links at the bottom of the dashboard, or `/api/export?format=json` and `/api/export?format=csv&table=daily|events|sites`.
+- **Delete:** "Delete my data" at the bottom of the dashboard, or `curl -X DELETE 'localhost:8000/api/data?confirm=yes'`.
+- Everything stays on your machine. Compose binds to `127.0.0.1` only.
+- Tests: `.venv/bin/pytest server/tests -q`.
+
 ## Stack
 
 Chrome Manifest V3, plain JavaScript, no dependencies, no build step.

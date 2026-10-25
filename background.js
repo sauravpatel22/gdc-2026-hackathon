@@ -51,6 +51,13 @@ async function updateBadge(health) {
   await chrome.action.setBadgeBackgroundColor({ color: badgeColor(health) });
 }
 
+// Keep the badge in sync when health changes from anywhere (e.g. the settings page).
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes.health && typeof changes.health.newValue === "number") {
+    updateBadge(changes.health.newValue);
+  }
+});
+
 // ---------- Time tracking ----------
 
 async function ensureDailyReset() {

@@ -39,6 +39,10 @@ els.showPet.addEventListener("change", () => {
   setState({ petHidden: !els.showPet.checked });
 });
 
+document.getElementById("openSettings").addEventListener("click", () => {
+  chrome.runtime.openOptionsPage();
+});
+
 // Keep the popup live while it's open.
 chrome.storage.onChanged.addListener(async (_changes, area) => {
   if (area === "local") render(await getState());

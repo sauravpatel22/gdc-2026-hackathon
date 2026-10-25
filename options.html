@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PausePet Settings</title>
+  <link rel="stylesheet" href="options.css" />
+</head>
+<body>
+  <main>
+    <h1>PausePet settings</h1>
+    <p class="lead">Make it yours. You can change any of this at any time.</p>
+
+    <form id="form">
+      <section>
+        <h2>Daily time limit</h2>
+        <label for="budget">Minutes on gambling sites per day</label>
+        <div class="row">
+          <input id="budget" type="number" min="10" max="1440" step="5" required />
+          <span id="budgetHint" class="hint"></span>
+        </div>
+        <p class="hint">Your pigeon's health goes down as you get closer to this number, and starts fresh each day.</p>
+      </section>
+
+      <section>
+        <h2>Your pigeon</h2>
+        <label class="check"><input id="enabled" type="checkbox" /> Keep an eye on my time</label>
+        <label class="check"><input id="showPet" type="checkbox" /> Show my pigeon on web pages</label>
+      </section>
+
+      <section>
+        <h2>Your reason</h2>
+        <label for="reason">Why do you want to take breaks? (Only you see this.)</label>
+        <textarea id="reason" rows="3" maxlength="200" placeholder="For example: more time with family"></textarea>
+      </section>
+
+      <section>
+        <h2>Testing</h2>
+        <label class="check"><input id="demoMode" type="checkbox" /> <span id="demoLabel">Demo mode</span></label>
+      </section>
+
+      <div class="actions">
+        <button type="submit" class="primary">Save</button>
+        <span id="status" class="status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+
+    <section class="tools">
+      <h2>Fresh starts</h2>
+      <div class="tool">
+        <button type="button" id="resetToday">Start today fresh</button>
+        <span class="hint">Sets today's minutes to 0 and your pigeon's health to 100.</span>
+      </div>
+      <div class="tool">
+        <button type="button" id="clearCache">Forget remembered sites</button>
+        <span class="hint">PausePet will look at each site again next time you visit.</span>
+      </div>
+    </section>
+  </main>
+  <script type="module" src="options.js"></script>
+</body>
+</html>

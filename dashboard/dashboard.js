@@ -1,9 +1,14 @@
 import { get, setIncludeDemo, OfflineError } from "./api.js";
 import { todayISO, addDays, addMonths, fmtMinutes, fmtRangeLabel, fmtBucketLabel } from "./format.js";
+import { renderSites } from "./sites.js";
+import { renderHeatmap } from "./heatmap.js";
+import { renderHighlights } from "./highlights.js";
+import { renderFooter } from "./footer.js";
+import { setOfflineBanner, renderEmpty, clearEmpty, startOfflinePoll, startAutoRefresh, renderDemoToggle } from "./states.js";
 import { renderBarChart, attachChartInteraction, formatValue, METRIC_NAMES } from "./chart.js";
 
 export const state = { range: "week", metric: "minutes", anchor: todayISO(), selected: null, includeDemo: false };
-export const data = { summary: null, series: null, sites: null, score: null, heatmap: null, offline: false };
+export const data = { summary: null, series: null, sites: null, score: null, heatmap: null, health: null, offline: false };
 
 // Session G (and E's cards) hook in here: fn(data, state) runs at the end of every render().
 const renderHooks = [];
@@ -49,15 +54,16 @@ export async function load() {
   const seq = ++loadSeq;
   const q = { range: state.range, anchor: state.anchor };
   try {
-    const [summary, series, sites, score, heatmap] = await Promise.all([
+    const [summary, series, sites, score, heatmap, health] = await Promise.all([
       get("/api/summary", q),
       get("/api/series", { ...q, metric: "minutes" }),
       get("/api/sites", q),
       get("/api/score"),
       get("/api/heatmap", q),
+      get("/api/health"),
     ]);
     if (seq !== loadSeq) return;
-    Object.assign(data, { summary, series, sites, score, heatmap, offline: false });
+    Object.assign(data, { summary, series, sites, score, heatmap, health, offline: false });
     const sel = state.selected;
     if (sel != null && !(series.points[sel] && series.points[sel].values[state.metric] != null)) state.selected = null;
     if (state.selected != null) refreshSites();
@@ -201,6 +207,33 @@ function renderChart() {
   });
 }
 
+function renderCards(d, st) {
+  const empty = !!d.summary && d.summary.has_data === false;
+  setOfflineBanner($("banner"), d.offline);
+  if (d.offline) startOfflinePoll(async () => (await get("/api/health")).ok, () => load());
+  for (const id of ["chart-card", "cards", "highlights"]) $(id).hidden = empty;
+  if (empty) renderEmpty($("empty"));
+  else clearEmpty($("empty"));
+  if (!d.summary) return;
+  renderSites($("sites"), d.sites, { range: st.range });
+  renderHeatmap($("heatmap"), d.heatmap);
+  renderHighlights($("highlights"), d.summary);
+  renderDemoToggle($("demo-toggle"), !!(d.health && d.health.has_demo) || st.includeDemo, setDemo);
+  // the footer holds the armed-delete state, so draw it once per deployment
+  const dep = d.health && d.health.deployment;
+  if ($("footer").dataset.deployment !== String(dep)) {
+    $("footer").dataset.deployment = String(dep);
+    renderFooter($("footer"), d.health, { onDelete: deleteAll });
+  }
+}
+
+async function deleteAll() {
+  const res = await fetch("/api/data?confirm=yes", { method: "DELETE" });
+  if (!res.ok) throw new Error(`delete returned ${res.status}`);
+  state.selected = null;
+  await load();
+}
+
 export function render() {
   renderHero();
   renderControls();
@@ -261,8 +294,10 @@ function init() {
     getSelected: () => state.selected,
     setSelected,
   });
+  onRender(renderCards);
   render();
   load();
+  startAutoRefresh(load);
 }
 
 init();

@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Testudo Dashboard</title>
   <link rel="stylesheet" href="dashboard.css">
+  <link rel="stylesheet" href="cards.css">
 </head>
 <body>
   <main>
@@ -48,7 +49,7 @@
       </div>
     </div>
 
-    <section class="chart-card">
+    <section class="chart-card" id="chart-card">
       <div class="big">
         <div id="big-label" class="big-label"></div>
         <div id="big-value" class="big-value">–</div>
@@ -61,7 +62,7 @@
       <div id="live" class="visually-hidden" aria-live="polite"></div>
     </section>
 
-    <div class="two-col">
+    <div class="two-col" id="cards">
       <div id="sites"></div>
       <div id="heatmap"></div>
     </div>

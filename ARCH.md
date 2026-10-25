@@ -18,7 +18,7 @@ Right now the extension does four things:
 │ scores keywords      │                 │ decides gambling or  │ ◀───── │ .local (storage.js)│
 │ sends page info      │ ◀────────────── │ not, writes cache    │        └─────────┬──────────┘
 │                      │   { gambling,   │ uses domains.js and  │                  │ health, petHidden
-│ petOverlay.js        │     source }    │ classifier.js (Gemma)│                  │ (read + live updates)
+│ petOverlay.js        │     source }    │ gemma.js (Gemma)     │                  │ (read + live updates)
 │ floating Testudo  ◀───┼─────────────────┼──────────────────────┼──────────────────┤
 └──────────────────────┘                 │ "tick" alarm, 1/min  │          ┌───────┴───────┐
                                          │  idle? active tab?   │          │ popup.js      │
@@ -35,7 +35,7 @@ The Testudo UI never talks to the service worker. It reads `health` and `petHidd
 
 Two kinds of script, and the difference matters:
 
-- **ES modules** (`import`/`export`): `background.js`, `storage.js`, `config.js`, `domains.js`, `health.js`, `classifier.js`, `popup.js`.
+- **ES modules** (`import`/`export`): `background.js`, `storage.js`, `config.js`, `domains.js`, `health.js`, `gemma.js`, `petLine.js`, `popup.js`.
 - **Classic scripts** (no `import`/`export`): `content.js`, `pet.js`, and `petOverlay.js`. They can't import the modules above, so shared code goes on `globalThis.Pause`. This is also why the domain check and Gemma call happen in `background.js` and not on the page. The popup loads `pet.js` as a normal `<script>` before `popup.js`, so it can use the same code.
 
 The service worker is killed after about 30 seconds idle, so nothing important lives in memory. Everything that must persist goes through `chrome.storage.local`.
@@ -63,7 +63,7 @@ Constants only, no functions.
 | `DEMO_MULTIPLIER` | `10` | Speeds up time in demo mode |
 | `RECOVERY_PER_HOUR` | `5` | Health recovered per hour |
 
-`DEFAULT_BUDGET_MINUTES` is used by `storage.js`. `DEMO_MULTIPLIER` and `RECOVERY_PER_HOUR` are used by the time tracker in `background.js`. `MODEL_NAME` and `OLLAMA_URL` are used by `classifier.js`.
+`DEFAULT_BUDGET_MINUTES` is used by `storage.js`. `DEMO_MULTIPLIER` and `RECOVERY_PER_HOUR` are used by the time tracker in `background.js`. `MODEL_NAME` and `OLLAMA_URL` are used by `gemma.js`.
 
 ### `storage.js`
 Thin async wrappers over `chrome.storage.local`.
@@ -85,12 +85,16 @@ Pure functions with no `chrome.*` calls, so any script can import them (includin
 - **`computeHealth(minutes, budget)`** returns `100 - minutes / budget * 100`, clamped to 0–100. A budget of 0 or less gives 0 if there are any minutes, else 100.
 - **`getPetStage(health)`** returns `"happy"` (80 and up), `"tired"` (50–79), `"sick"` (20–49), or `"asleep"` (below 20).
 
-### `classifier.js`
-Asks the local Gemma model whether a page is a gambling site. Used only for pages the fast checks can't settle.
+### `gemma.js`
+Everything that talks to the local Gemma model through Ollama. Both functions share one internal `callOllama(body, timeoutMs)`, which POSTs to `OLLAMA_URL` with `MODEL_NAME` and `stream: false`, and returns the parsed response or `null` on any failure (HTTP error, timeout, network). It never throws.
 
-- **`classifyWithGemma({ url, title, textSample })`** sends a POST to Ollama (`OLLAMA_URL`) with `MODEL_NAME`, `stream: false`, `format: "json"`, and `temperature: 0`. It has an 8-second timeout. It returns `{ gambling, type, confidence }`, or `null` on any failure (HTTP error, timeout, bad JSON), and logs the outcome. It never throws.
-- **`buildPrompt({ url, title, textSample })`** (internal) builds the prompt. It tells the model that gambling means real-money wagering and that news or articles *about* gambling don't count, and asks for a JSON reply of `{ gambling, type, confidence }`.
-- **`parseReply(text)`** (internal) strips any code fences the model adds, parses the JSON, and checks that `gambling` is a boolean and `confidence` is a number from 0 to 1. Otherwise it returns `null`. `type` is one of `sportsbook`, `casino`, `poker`, `lottery`, `other`, or `none`.
+- **`classifyWithGemma({ url, title, textSample })`** asks whether a page is a gambling site. Used only for pages the fast checks can't settle. It sends `format: "json"` and `temperature: 0` with an 8-second timeout, and returns `{ gambling, type, confidence }`, or `null` on any failure (including bad JSON). It logs the outcome.
+- **`generateText(prompt, { timeoutMs, temperature, maxTokens })`** returns plain text, or `null` on failure. It sends `think: false`, because Gemma 4 is a thinking model and otherwise spends the token budget on hidden reasoning and returns an empty reply. Callers must always have a fallback.
+- **`buildClassifyPrompt(...)`** (internal) tells the model that gambling means real-money wagering and that news or articles *about* gambling don't count, and asks for a JSON reply of `{ gambling, type, confidence }`.
+- **`parseClassifyReply(text)`** (internal) strips any code fences, parses the JSON, and checks that `gambling` is a boolean and `confidence` is a number from 0 to 1. Otherwise it returns `null`. `type` is one of `sportsbook`, `casino`, `poker`, `lottery`, `other`, or `none`.
+
+### `petLine.js`
+Writes Testudo's one-sentence message with Gemma. **`refreshPetLine()`** is called from `background.js` on install, on startup, and when `health` or `reason` changes. It asks Gemma for a new line each time Testudo changes stage (or the reason changes), and does nothing otherwise. It is also triggered on every service-worker wake, every tick, and when the popup or settings page opens (`PET_LINE` message), so a missed storage event can't leave the line stale. Otherwise it builds a prompt from the stage, time of day, today's minutes, the streak, and the user's reason, calls `generateText`, cleans the reply to a single short sentence, and stores `{ stage, reason, text }` as `petLine`. After a failure it waits 60 seconds before trying again. The popup and settings page read `petLine` through `Pause.pet.messageFor()` and fall back to the built-in stage message.
 
 ### `pet.js`
 Shared Testudo code for the popup and the floating Testudo. It's a classic script that sets `globalThis.Pause.pet`.

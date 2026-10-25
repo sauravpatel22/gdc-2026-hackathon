@@ -1,7 +1,7 @@
 import { getState, setState } from "./storage.js";
 import { DEMO_MULTIPLIER } from "./config.js";
 
-const { stageInfo, mascotSVG } = globalThis.Pause.pet;
+const { stageInfo, messageFor, mascotSVG } = globalThis.Pause.pet;
 
 const els = {
   pet: document.getElementById("pet"),
@@ -24,7 +24,7 @@ function render(state) {
     shownStage = info.stage;
   }
   els.pet.className = `pet ${info.stage}`;
-  els.message.textContent = info.message;
+  els.message.textContent = messageFor(info, state.petLine);
 
   els.fill.style.width = `${info.health}%`;
   els.fill.style.background = info.color;
@@ -54,4 +54,5 @@ chrome.storage.onChanged.addListener(async (_changes, area) => {
   if (area === "local") render(await getState());
 });
 
+chrome.runtime.sendMessage({ type: "PET_LINE" }).catch(() => {});
 render(await getState());

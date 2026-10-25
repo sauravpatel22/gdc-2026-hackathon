@@ -53,6 +53,14 @@
       </section>
 
       <section>
+        <h2><span class="ico" aria-hidden="true">💛</span> Why I'm doing this</h2>
+        <p class="sub">In your own words. Testudo keeps this for the moments you might need to hear it. Only you see it, and it stays on your device.</p>
+        <label for="reason" class="sr-only">Your reason</label>
+        <textarea id="reason" rows="3" maxlength="280" placeholder="For example: I want my weekends back, and I want to save for the trip."></textarea>
+        <p id="reasonCount" class="hint"></p>
+      </section>
+
+      <section>
         <h2><span class="ico" aria-hidden="true">🐢</span> Your Testudo</h2>
         <label class="switch">
           <input id="enabled" type="checkbox" />
@@ -82,6 +90,13 @@
         <button type="submit" class="primary">Save changes</button>
       </div>
     </form>
+
+    <section class="sites">
+      <h2><span class="ico" aria-hidden="true">🔎</span> Sites Testudo has judged</h2>
+      <p class="sub">Sites the AI decided about on its own. If it got one wrong, fix it here. Changes apply right away.</p>
+      <ul id="siteList" class="site-list"></ul>
+      <p id="siteEmpty" class="hint" hidden>Nothing here yet. Sites show up after Testudo has looked at them.</p>
+    </section>
 
     <section class="tools">
       <h2><span class="ico" aria-hidden="true">🌱</span> Fresh starts</h2>

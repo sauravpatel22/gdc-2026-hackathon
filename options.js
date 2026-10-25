@@ -2,7 +2,7 @@ import { getState, setState } from "./storage.js";
 import { computeHealth } from "./health.js";
 import { DEMO_MULTIPLIER } from "./config.js";
 
-const { stageInfo, mascotSVG } = globalThis.Pause.pet;
+const { stageInfo, messageFor, mascotSVG } = globalThis.Pause.pet;
 
 const MIN_BUDGET = 10;
 const MAX_BUDGET = 1440;
@@ -25,6 +25,10 @@ const els = {
   todayFill: document.getElementById("todayFill"),
   todayHint: document.getElementById("todayHint"),
   budgetRange: document.getElementById("budgetRange"),
+  reason: document.getElementById("reason"),
+  reasonCount: document.getElementById("reasonCount"),
+  siteList: document.getElementById("siteList"),
+  siteEmpty: document.getElementById("siteEmpty"),
   limitNudge: document.getElementById("limitNudge"),
   presets: document.querySelectorAll("[data-minutes]"),
 };
@@ -33,6 +37,7 @@ let savedBudget = null;
 let shownStage = null;
 let todayMinutes = 0;
 let savedHealth = 100;
+let petLine = null;
 
 els.demoLabel.textContent = `Demo mode (time moves ${DEMO_MULTIPLIER}x faster, for trying things out)`;
 
@@ -78,7 +83,7 @@ function renderToday(budget) {
     els.heroPet.className = `hero-pet ${info.stage}`;
     shownStage = info.stage;
   }
-  els.heroMessage.textContent = info.message;
+  els.heroMessage.textContent = messageFor(info, petLine);
   els.todayFill.style.width = `${info.health}%`;
   els.todayFill.style.background = info.color;
   els.todayFill.parentElement.setAttribute("aria-valuenow", String(Math.round(info.health)));
@@ -88,6 +93,62 @@ function renderToday(budget) {
   els.todayHint.textContent = left > 0
     ? `${formatMinutes(left)} left before Testudo needs to rest. Less is always okay too.`
     : "You've reached your limit for today. Testudo is resting, and tomorrow is a fresh start.";
+}
+
+function updateReasonCount() {
+  const left = els.reason.maxLength - els.reason.value.length;
+  els.reasonCount.textContent = left < 60 ? `${left} characters left` : "";
+}
+
+// Sites the AI (or the user) decided about. Known-domain and keyword results are not
+// listed: domains.js always wins, and keyword rejections are not AI judgments.
+async function renderSites() {
+  const { cache } = await getState();
+  const rows = Object.entries(cache)
+    .filter(([, entry]) => entry.source === "gemma" || entry.source === "user")
+    .sort(([a, x], [b, y]) => Number(y.gambling) - Number(x.gambling) || a.localeCompare(b));
+
+  els.siteEmpty.hidden = rows.length > 0;
+  els.siteList.replaceChildren(...rows.map(([host, entry]) => {
+    const li = document.createElement("li");
+
+    const name = document.createElement("span");
+    name.className = "site-name";
+    name.textContent = host;
+
+    const tag = document.createElement("span");
+    tag.className = `site-tag${entry.gambling ? " gambling" : ""}`;
+    tag.textContent = entry.gambling ? "Gambling" : "Not gambling";
+
+    const flip = document.createElement("button");
+    flip.type = "button";
+    flip.textContent = entry.gambling ? "Not gambling" : "It's gambling";
+    flip.addEventListener("click", () => setSiteVerdict(host, !entry.gambling));
+
+    const forget = document.createElement("button");
+    forget.type = "button";
+    forget.textContent = "Forget";
+    forget.title = "Let Testudo look at this site again next time";
+    forget.addEventListener("click", () => forgetSite(host));
+
+    li.append(name, tag, flip, forget);
+    return li;
+  }));
+}
+
+// Re-read the cache right before writing so we don't clobber what the service worker added.
+async function setSiteVerdict(host, gambling) {
+  const { cache } = await getState();
+  cache[host] = { gambling, source: "user", at: Date.now() };
+  await setState({ cache });
+  showStatus(gambling ? `${host} will count as gambling.` : `${host} won't count anymore.`);
+}
+
+async function forgetSite(host) {
+  const { cache } = await getState();
+  delete cache[host];
+  await setState({ cache });
+  showStatus(`Testudo will look at ${host} again.`);
 }
 
 function showStatus(text) {
@@ -101,23 +162,30 @@ async function load() {
   savedBudget = state.budgetMinutes;
   todayMinutes = state.gamblingMinutesToday;
   savedHealth = state.health;
+  petLine = state.petLine;
   els.budget.value = state.budgetMinutes;
   els.enabled.checked = state.enabled;
   els.showPet.checked = !state.petHidden;
   els.demoMode.checked = state.demoMode;
+  els.reason.value = state.reason;
+  updateReasonCount();
   updateBudgetHint();
+  renderSites();
 }
 
 els.budget.addEventListener("input", updateBudgetHint);
+els.reason.addEventListener("input", updateReasonCount);
 els.demoMode.addEventListener("change", updateBudgetHint);
 
 // Keep today's minutes live while the settings page is open (demo mode moves fast).
-chrome.storage.onChanged.addListener(async (_changes, area) => {
+chrome.storage.onChanged.addListener(async (changes, area) => {
   if (area !== "local") return;
   const state = await getState();
   todayMinutes = state.gamblingMinutesToday;
   savedHealth = state.health;
+  petLine = state.petLine;
   updateBudgetHint();
+  if (changes.cache) renderSites();
 });
 els.budgetRange.addEventListener("input", () => {
   els.budget.value = els.budgetRange.value;
@@ -140,6 +208,7 @@ els.form.addEventListener("submit", async (event) => {
     budgetMinutes: budget,
     // Re-score health against the new limit so Testudo and the badge match right away.
     health: computeHealth(state.gamblingMinutesToday, budget),
+    reason: els.reason.value.trim(),
     enabled: els.enabled.checked,
     petHidden: !els.showPet.checked,
     demoMode: els.demoMode.checked,
@@ -164,4 +233,5 @@ els.clearCache.addEventListener("click", async () => {
   showStatus("Done. PausePet will look at each site again.");
 });
 
+chrome.runtime.sendMessage({ type: "PET_LINE" }).catch(() => {});
 await load();

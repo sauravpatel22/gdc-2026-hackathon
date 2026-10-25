@@ -124,7 +124,30 @@ input[type="number"] {
   font-size: 14px;
 }
 
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 input:focus-visible,
+textarea:focus-visible,
 button:focus-visible,
 .switch input:focus-visible + .track,
 summary:focus-visible {
@@ -299,3 +322,30 @@ button.primary:hover { background: var(--accent-dark); }
 }
 
 .demo-badge[hidden] { display: none; }
+
+/* Judged sites */
+.site-list { margin: 0; padding: 0; list-style: none; }
+
+.site-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.site-list li + li { border-top: 1px solid var(--track); }
+
+.site-name { flex: 1; min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+
+.site-tag {
+  flex: none;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--track);
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.site-tag.gambling { background: var(--warn-bg); color: var(--warn-text); }
+
+.site-list button { flex: none; padding: 6px 10px; font-size: 13px; }

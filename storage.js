@@ -22,6 +22,7 @@ export function getDefaultState() {
     pausesThisWeek: 0,
     lastGamblingAt: null,
     petHidden: false,
+    petLine: null,
   };
 }
 

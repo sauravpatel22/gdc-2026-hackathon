@@ -1,8 +1,9 @@
 import { getState, setState, todayISO } from "./storage.js";
 import { isKnownGamblingDomain } from "./domains.js";
-import { classifyWithGemma } from "./classifier.js";
+import { classifyWithGemma } from "./gemma.js";
 import { computeHealth, getPetStage } from "./health.js";
 import { DEMO_MULTIPLIER, RECOVERY_PER_HOUR } from "./config.js";
+import { refreshPetLine } from "./petLine.js";
 
 const LOW_SCORE_THRESHOLD = 0.3;
 const GEMMA_MIN_CONFIDENCE = 0.6;
@@ -26,16 +27,19 @@ chrome.runtime.onInstalled.addListener(async () => {
   await setState(state);
   await ensureTickAlarm();
   await updateBadge(state.health);
+  refreshPetLine();
   console.log("PausePet installed");
 });
 
 chrome.runtime.onStartup.addListener(async () => {
   const state = await getState();
   await updateBadge(state.health);
+  refreshPetLine();
 });
 
 // Runs every time the service worker wakes up.
 ensureTickAlarm();
+refreshPetLine();
 
 // ---------- Badge ----------
 
@@ -58,6 +62,8 @@ chrome.storage.onChanged.addListener((changes, area) => {
     updateBadge(changes.health.newValue);
   }
   if (changes.demoMode) syncDemoLoop();
+  // refreshPetLine() is a cheap no-op unless the stage or reason changed.
+  if (changes.health || changes.reason) refreshPetLine();
 });
 
 // ---------- Time tracking ----------
@@ -137,6 +143,7 @@ async function onTick(fraction = 1) {
   }
 
   await ensureDailyReset();
+  refreshPetLine();
 
   const hostname = await getActiveHostname();
   if (!hostname) {
@@ -267,6 +274,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         sendResponse({ gambling: false, source: "unknown" });
       });
     return true; // keep the channel open for the async reply
+  }
+
+  if (msg.type === "PET_LINE") {
+    refreshPetLine();
+    return;
   }
 
   if (msg.type === "DEBUG_ADD_MINUTES") {

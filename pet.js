@@ -39,6 +39,11 @@ globalThis.Pause = globalThis.Pause || {};
     return { stage, health: value, ...STAGES[stage] };
   }
 
+  // Gemma's line for this stage if we have one, else the built-in message.
+  function messageFor(info, petLine) {
+    return petLine && petLine.stage === info.stage && petLine.text ? petLine.text : info.message;
+  }
+
   // Eye center is (91, 53) on the terrapin's head.
   function eyes(stage) {
     if (stage === "happy") {
@@ -98,5 +103,5 @@ globalThis.Pause = globalThis.Pause || {};
 </svg>`;
   }
 
-  globalThis.Pause.pet = { STAGES, getStage, stageInfo, mascotSVG };
+  globalThis.Pause.pet = { STAGES, getStage, stageInfo, messageFor, mascotSVG };
 })();

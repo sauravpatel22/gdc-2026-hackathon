@@ -81,7 +81,7 @@ app.include_router(routes_data.router)
 @app.get("/pet.js", include_in_schema=False)
 def pet_js():
     # one copy of the mascot: the extension's own pet.js
-    return FileResponse(config.REPO_ROOT / "pet.js", media_type="text/javascript")
+    return FileResponse(config.REPO_ROOT / "extension" / "pet.js", media_type="text/javascript")
 
 
 # last, so it never shadows /api or /pet.js

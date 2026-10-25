@@ -27,7 +27,7 @@ export function captureBackfill() {
       pendingBackfill: {
         type: "backfill", user_id: s.userId, ts: Date.now(), date: s.lastResetDate,
         minutes: s.gamblingMinutesToday, streak: s.streak, budget: s.budgetMinutes,
-        health: s.health, demo: s.demoMode,
+        health: s.health, demo: false,
       },
       syncBackfillDone: true,
     });
@@ -47,6 +47,17 @@ export function record(fields) {
 }
 
 let flushing = false;
+let flushTimer = null;
+
+// Push soon after a tick is recorded instead of waiting for the once-a-minute alarm, so the
+// dashboard follows live. Coalesces the demo loop's once-a-second ticks into one request.
+export function scheduleFlush(delayMs = 2000) {
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    flush();
+  }, delayMs);
+}
 
 // Never throws: the extension must work with the backend off.
 export async function flush() {

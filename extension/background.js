@@ -4,7 +4,7 @@ import { classifyWithGemma } from "./gemma.js";
 import { computeHealth, getPetStage } from "./health.js";
 import { DEMO_MULTIPLIER, RECOVERY_PER_HOUR } from "./config.js";
 import { refreshPetLine } from "./petLine.js";
-import { record, flush, captureBackfill } from "./sync.js";
+import { record, flush, scheduleFlush, captureBackfill } from "./sync.js";
 
 const LOW_SCORE_THRESHOLD = 0.3;
 const GEMMA_MIN_CONFIDENCE = 0.6;
@@ -92,8 +92,8 @@ async function addGamblingMinute(minutes = 1, site = null) {
   await setState({ gamblingMinutesToday, health, lastGamblingAt: Date.now() });
   if (site) await record({
     ts: Date.now(), date: todayISO(), hostname: site.hostname, minutes: added,
-    health, budget: state.budgetMinutes, source: site.source, demo: state.demoMode,
-  });
+    health, budget: state.budgetMinutes, source: site.source, demo: false, // demo mode only speeds up tracking; "demo" on the server means sample data
+  }).then(() => scheduleFlush());
   await updateBadge(health);
   if (minutes >= 1) console.log(
     `[PausePet] +${added} gambling min -> ${gamblingMinutesToday}/${state.budgetMinutes}, health ${health.toFixed(1)} (${getPetStage(health)})`

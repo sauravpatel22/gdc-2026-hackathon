@@ -114,7 +114,7 @@ section {
   padding: 18px;
   border-radius: 14px;
   background: var(--card);
-  box-shadow: var(--shadow);
+  border: 1px solid var(--track);
 }
 
 .help ul { margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.7; }
@@ -177,21 +177,38 @@ select:focus-visible,
 .big { margin-bottom: 10px; }
 .big-label { font-size: 13px; color: var(--muted); }
 .big-value { font-size: 32px; font-weight: 700; line-height: 1.2; }
-.big-delta { font-size: 13px; color: var(--muted); }
-.big-delta.better { color: var(--good); }
+.big-label { display: flex; align-items: center; gap: 6px; }
+.big-label svg { width: 16px; height: 16px; flex: none; color: var(--accent-dark); }
+.big-delta {
+  display: inline-flex; align-items: center; gap: 4px;
+  margin-top: 4px; padding: 3px 10px 3px 8px;
+  border-radius: 999px; font-size: 13px; font-weight: 600;
+  color: var(--over); background: color-mix(in srgb, var(--over) 12%, transparent);
+}
+.big-delta svg { width: 14px; height: 14px; flex: none; }
+.big-delta.better { color: var(--good); background: color-mix(in srgb, var(--good) 14%, transparent); }
+.big-delta.same { color: var(--muted); background: var(--track); }
 
-.chart-wrap { border-radius: 10px; }
+.chart-wrap { border-radius: 12px; padding: 4px 0 0; }
 #chart { display: block; width: 100%; height: auto; }
 
 #chart .axis { stroke: var(--line); stroke-width: 1; }
-#chart .limit { stroke: var(--muted); stroke-width: 1; }
-#chart .limit-label { fill: var(--muted); font-size: 11px; }
-#chart .xlab { fill: var(--muted); font-size: 11px; }
-#chart .col { fill: var(--accent); }
+#chart .grid { stroke: var(--line); stroke-width: 1; stroke-dasharray: 2 5; opacity: 0.7; }
+#chart .ylab,
+#chart .xlab { fill: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+#chart .xlab.sel { fill: var(--text); font-weight: 700; }
+#chart .limit { stroke: var(--muted); stroke-width: 1.25; opacity: 0.8; }
+#chart .limit-pill { fill: var(--card); stroke: var(--line); stroke-width: 1; }
+#chart .limit-label { fill: var(--muted); font-size: 10.5px; font-weight: 600; }
+#chart .band { fill: var(--track); opacity: 0; transition: opacity 0.15s; }
+#chart .slot:hover .band,
+#chart .band.sel { opacity: 0.55; }
+#chart .col { fill: var(--accent); transition: opacity 0.15s; }
 #chart .col.over { fill: var(--over); }
 #chart .col.zero { fill: var(--track); }
-#chart .bars.has-sel .col { opacity: 0.45; }
+#chart .bars.has-sel .col { opacity: 0.4; }
 #chart .bars.has-sel .col.sel { opacity: 1; }
+#chart .pin { fill: var(--text); font-size: 12px; font-weight: 700; }
 #chart .hit { fill: transparent; cursor: pointer; }
 
 .chart-note { margin: 0; padding: 36px 0; text-align: center; color: var(--muted); line-height: 1.5; }

@@ -6,6 +6,8 @@ services:
     environment:
       TESTUDO_DB: /data/testudo.db
       TESTUDO_DEPLOYMENT: local
+      TESTUDO_OLLAMA_URL: http://host.docker.internal:11434  # Gemma runs on the host
+    extra_hosts: ["host.docker.internal:host-gateway"]
     restart: unless-stopped
 volumes:
   testudo-data:

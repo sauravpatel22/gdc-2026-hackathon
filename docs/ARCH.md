@@ -236,4 +236,4 @@ Not part of the extension. A local FastAPI + SQLite app that stores the ticks `s
 
 ## Not part of the extension
 
-`main.py` and `requirements.txt` are Python files from a teammate. The extension doesn't load them.
+`scripts/gemma_check.py` and `scripts/requirements.txt` are Python files from a teammate. The extension doesn't load them.

@@ -314,7 +314,11 @@ export function handle(path, p) {
     "/api/series": () => series(p, today),
     "/api/sites": () => sites(p, today),
     "/api/score": () => score(p, today),
-    "/api/heatmap": () => heatmap(p, today),
+    "/api/insights": () => ({ status: "ok", model: "gemma4:e2b", insights: [
+      { title: "Steady progress", body: "You stayed under your limit on most days. That adds up." },
+      { title: "Evenings stand out", body: "Most of your time lands after 6 PM. A short walk then could help." },
+      { title: "One small idea", body: "Try a 10-minute pause before opening your top site." },
+    ] }),
     "/api/health": () => ({ ok: true, deployment: "local", has_demo: true, schema: 1 }),
   };
   const fn = routes[path];

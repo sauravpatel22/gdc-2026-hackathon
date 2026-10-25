@@ -2,10 +2,11 @@ import { fmtMinutes, parseDay } from "./format.js";
 
 const W = 640;
 const H = 240;
-const PAD_X = 8;
-const PAD_TOP = 18;
-const PAD_BOTTOM = 34;
-const PLOT_W = W - PAD_X * 2;
+const PAD_L = 46;
+const PAD_R = 8;
+const PAD_TOP = 26;
+const PAD_BOTTOM = 32;
+const PLOT_W = W - PAD_L - PAD_R;
 const PLOT_H = H - PAD_TOP - PAD_BOTTOM;
 
 export const METRIC_NAMES = { minutes: "Time", budget_pct: "Limit used", score: "Score", sessions: "Sessions" };
@@ -41,6 +42,24 @@ function xLabel(bucket, points, i) {
   return d.toLocaleDateString("en-US", { month: "narrow" });
 }
 
+function niceStep(max, target) {
+  const raw = max / target;
+  const mag = 10 ** Math.floor(Math.log10(raw));
+  const f = raw / mag;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * mag;
+}
+
+function tickLabel(metric, v) {
+  if (metric === "minutes") {
+    if (v === 0) return "0";
+    const h = Math.floor(v / 60);
+    const m = Math.round(v % 60);
+    return h ? (m ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+  }
+  if (metric === "budget_pct") return `${v}%`;
+  return String(v);
+}
+
 // opts: { points, metric, budget, selectedIndex, bucket, labelFor(point) -> string }
 export function renderBarChart(svgEl, { points, metric, budget, selectedIndex, bucket, labelFor }) {
   const n = points.length;
@@ -52,39 +71,67 @@ export function renderBarChart(svgEl, { points, metric, budget, selectedIndex, b
     lineVal || 0,
     metric === "score" ? 100 : 0,
   );
-  const max = top * 1.1 || 1;
+  // Minutes read best on 15 / 30 / 60 minute steps, everything else on a 1-2-5 scale.
+  let step = niceStep(top || 1, 4);
+  if (metric === "minutes") step = [5, 15, 30, 60, 120, 240, 480].find((x) => x >= (top || 1) / 4) || 480;
+  if (metric === "sessions") step = Math.max(1, Math.ceil(step));
+  const max = Math.max(step, Math.ceil((top * 1.05) / step) * step) || 1;
   const slot = PLOT_W / n;
-  const barW = Math.min(slot * 0.68, 56);
+  const barW = Math.min(slot * 0.62, 44);
   const baseY = PAD_TOP + PLOT_H;
   const hasSel = selectedIndex != null;
+  const yOf = (v) => baseY - (v / max) * PLOT_H;
 
-  let out = `<line class="axis" x1="${PAD_X}" x2="${W - PAD_X}" y1="${baseY}" y2="${baseY}"/>`;
-  let bars = "";
-  let hits = "";
+  let grid = "";
+  for (let v = 0; v <= max + 1e-9; v += step) {
+    const y = yOf(v).toFixed(1);
+    grid += `<line class="${v === 0 ? "axis" : "grid"}" x1="${PAD_L}" x2="${W - PAD_R}" y1="${y}" y2="${y}"/>`;
+    grid += `<text class="ylab" x="${PAD_L - 8}" y="${(+y + 4).toFixed(1)}" text-anchor="end">${tickLabel(metric, v)}</text>`;
+  }
+
+  let slots = "";
   let labels = "";
+  let pin = "";
 
   points.forEach((p, i) => {
-    const cx = PAD_X + slot * i + slot / 2;
+    const x0 = PAD_L + slot * i;
+    const cx = x0 + slot / 2;
     const lab = xLabel(bucket, points, i);
-    if (lab) labels += `<text class="xlab" x="${cx.toFixed(1)}" y="${H - 12}" text-anchor="middle">${lab}</text>`;
+    if (lab) labels += `<text class="xlab${i === selectedIndex ? " sel" : ""}" x="${cx.toFixed(1)}" y="${H - 10}" text-anchor="middle">${lab}</text>`;
     const v = vals[i];
-    if (v == null) return;
-    const h = v > 0 ? Math.max(2, (v / max) * PLOT_H) : 1.5;
-    const cls = ["col", p.over_limit ? "over" : "", v === 0 ? "zero" : "", i === selectedIndex ? "sel" : ""].filter(Boolean).join(" ");
-    const aria = barAriaLabel(labelFor ? labelFor(p) : p.start, metric, p).replace(/"/g, "&quot;");
-    bars += `<rect class="${cls}" role="img" aria-label="${aria}" data-i="${i}" x="${(cx - barW / 2).toFixed(1)}" y="${(baseY - h).toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" rx="3"/>`;
-    hits += `<rect class="hit" aria-hidden="true" data-i="${i}" x="${(PAD_X + slot * i).toFixed(1)}" y="${PAD_TOP}" width="${slot.toFixed(1)}" height="${PLOT_H}"/>`;
+    const band = `<rect class="band${i === selectedIndex ? " sel" : ""}" x="${x0.toFixed(1)}" y="${PAD_TOP - 6}" width="${slot.toFixed(1)}" height="${PLOT_H + 6}" rx="8"/>`;
+    const hit = `<rect class="hit" aria-hidden="true" data-i="${i}" x="${x0.toFixed(1)}" y="${PAD_TOP - 6}" width="${slot.toFixed(1)}" height="${PLOT_H + 6}"/>`;
+    let col = "";
+    if (v != null) {
+      const h = v > 0 ? Math.max(4, (v / max) * PLOT_H) : 2;
+      const cls = ["col", p.over_limit ? "over" : "", v === 0 ? "zero" : "", i === selectedIndex ? "sel" : ""].filter(Boolean).join(" ");
+      const aria = barAriaLabel(labelFor ? labelFor(p) : p.start, metric, p).replace(/"/g, "&quot;");
+      const bx = cx - barW / 2;
+      const by = baseY - h;
+      const r = Math.min(barW / 2, 6, h);
+      // Rounded top corners only, so bars sit flat on the axis.
+      const d = `M${bx.toFixed(1)} ${baseY}V${(by + r).toFixed(1)}a${r} ${r} 0 0 1 ${r} ${-r}h${(barW - 2 * r).toFixed(1)}a${r} ${r} 0 0 1 ${r} ${r}V${baseY}z`;
+      col = `<path class="${cls}" role="img" aria-label="${aria}" data-i="${i}" d="${d}"/>`;
+      if (i === selectedIndex) {
+        pin = `<text class="pin" x="${cx.toFixed(1)}" y="${(by - 8).toFixed(1)}" text-anchor="middle">${formatValue(metric, v)}</text>`;
+      }
+    }
+    slots += `<g class="slot">${band}${col}${hit}</g>`;
   });
 
+  let limit = "";
   if (lineVal != null) {
-    const y = baseY - (lineVal / max) * PLOT_H;
-    const text = metric === "budget_pct" ? "100%" : `daily limit ${fmtMinutes(budget)}`;
-    out += `<line class="limit" x1="${PAD_X}" x2="${W - PAD_X}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke-dasharray="4 4"/>`;
-    out += `<text class="limit-label" x="${W - PAD_X}" y="${(y - 5).toFixed(1)}" text-anchor="end">${text}</text>`;
+    const y = yOf(lineVal);
+    const text = metric === "budget_pct" ? "limit" : `limit ${fmtMinutes(budget)}`;
+    const tw = text.length * 6.2 + 14;
+    limit += `<line class="limit" x1="${PAD_L}" x2="${W - PAD_R}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke-dasharray="5 5"/>`;
+    limit += `<rect class="limit-pill" x="${(PAD_L + 6).toFixed(1)}" y="${(y - 20).toFixed(1)}" width="${tw.toFixed(1)}" height="16" rx="8"/>`;
+    limit += `<text class="limit-label" x="${(PAD_L + 6 + tw / 2).toFixed(1)}" y="${(y - 8.5).toFixed(1)}" text-anchor="middle">${text}</text>`;
   }
 
   svgEl.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  svgEl.innerHTML = `${out}<g class="bars${hasSel ? " has-sel" : ""}">${bars}</g>${labels}${hits}`;
+  svgEl.innerHTML =
+    `${grid}<g class="bars${hasSel ? " has-sel" : ""}">${slots}</g>${limit}${pin}${labels}`;
 }
 
 // Click and keyboard handling. api: { getPoints(), getSelected(), setSelected(i|null) }

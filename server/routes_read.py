@@ -3,7 +3,7 @@ from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from . import queries
+from . import insights, queries
 from .db import get_conn
 from .windows import window
 
@@ -91,3 +91,12 @@ def get_heatmap(range: Range = "week", anchor: Optional[str] = day_param(),
     t = _today(today)
     s, e = window(range, _anchor(anchor, t))
     return queries.heatmap(conn, USER, _scope(include_demo), s, e, t)
+
+
+@router.get("/insights")
+def get_insights(range: Range = "week", anchor: Optional[str] = day_param(),
+                 today: Optional[str] = day_param(), include_demo: Flag = "0",
+                 refresh: Flag = "0", conn=Depends(get_conn)):
+    t = _today(today)
+    return insights.insights(conn, USER, _scope(include_demo), range, _anchor(anchor, t), t,
+                             refresh == "1")

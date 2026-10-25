@@ -4,5 +4,5 @@ __pycache__
 *.db*
 server/tests
 *.pdf
-icons
+extension/icons
 .claude

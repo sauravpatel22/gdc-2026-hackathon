@@ -17,7 +17,7 @@ export function setIncludeDemo(on) {
   opts.includeDemo = !!on;
 }
 
-export async function get(path, params = {}) {
+export async function get(path, params = {}, { timeoutMs = TIMEOUT_MS } = {}) {
   const all = { today: todayISO(), include_demo: opts.includeDemo ? 1 : 0, ...params };
   for (const k of Object.keys(all)) if (all[k] == null) delete all[k];
 
@@ -27,7 +27,7 @@ export async function get(path, params = {}) {
   }
 
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
     const res = await fetch(`${path}?${new URLSearchParams(all)}`, { signal: ctrl.signal });
     if (!res.ok) throw new OfflineError(`${path} returned ${res.status}`);

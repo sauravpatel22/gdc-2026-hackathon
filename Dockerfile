@@ -4,7 +4,7 @@ COPY server/requirements.txt server/requirements.txt
 RUN pip install --no-cache-dir -r server/requirements.txt
 COPY server/ server/
 COPY dashboard/ dashboard/
-COPY pet.js pet.js
+COPY extension/pet.js extension/pet.js
 ENV TESTUDO_DB=/data/testudo.db
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s \

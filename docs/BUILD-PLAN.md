@@ -1,6 +1,6 @@
 # Pause: Build Plan (7 hours)
 
-A simple, high-level version of `Pause Claude Code Build Guide.pdf`. Each step says **what you're building**, **the small tasks**, and **how you know it's done**. Tick the boxes as you go.
+A simple, high-level version of `guides/Pause Claude Code Build Guide.pdf`. Each step says **what you're building**, **the small tasks**, and **how you know it's done**. Tick the boxes as you go.
 
 **The idea in one line:** a Chrome extension with a virtual pet. Time on gambling sites drains the pet's health, time away heals it, and at low health a gentle pause screen appears. Gemma (running locally) helps spot gambling sites we don't already know about.
 
@@ -16,10 +16,10 @@ A simple, high-level version of `Pause Claude Code Build Guide.pdf`. Each step s
 
 ## Phase 0: Setup (0:00 to 0:30)
 
-- [ ] Do `run-gemma-locally.md` until the `curl` test returns an answer.
+- [ ] Do `guides/run-gemma-locally.md` until the `curl` test returns an answer.
 - [ ] Keep `OLLAMA_ORIGINS="chrome-extension://*" ollama serve` running in a terminal.
 - [ ] Create a `CLAUDE.md` in the project root with the ground rules from the PDF (page 2) so Claude Code follows them.
-- [ ] Optional: do `digitalocean-optional.md` later, only if time allows.
+- [ ] Optional: do `guides/digitalocean-optional.md` later, only if time allows.
 
 **Done when:** Gemma answers a test question and your project folder has the PDF and `CLAUDE.md`.
 

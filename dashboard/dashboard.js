@@ -1,14 +1,14 @@
 import { get, setIncludeDemo, OfflineError } from "./api.js";
 import { todayISO, addDays, addMonths, fmtMinutes, fmtRangeLabel, fmtBucketLabel } from "./format.js";
 import { renderSites } from "./sites.js";
-import { renderHeatmap } from "./heatmap.js";
+import { renderInsights } from "./insights.js";
 import { renderHighlights } from "./highlights.js";
 import { renderFooter } from "./footer.js";
 import { setOfflineBanner, renderEmpty, clearEmpty, startOfflinePoll, startAutoRefresh } from "./states.js";
 import { renderBarChart, attachChartInteraction, formatValue, METRIC_NAMES } from "./chart.js";
 
 export const state = { range: "week", metric: "minutes", anchor: todayISO(), selected: null, includeDemo: false };
-export const data = { summary: null, series: null, sites: null, score: null, heatmap: null, health: null, offline: false };
+export const data = { summary: null, series: null, sites: null, score: null, health: null, offline: false };
 
 // Session G (and E's cards) hook in here: fn(data, state) runs at the end of every render().
 const renderHooks = [];
@@ -36,6 +36,36 @@ const BUCKET_OF = { day: "hour", week: "day", month: "day", "6months": "week", y
 const VS = { day: "yesterday", week: "last week", month: "last month", "6months": "the previous 6 months", year: "the year before" };
 const LOWER_IS_BETTER = { minutes: true, budget_pct: true, sessions: true, score: false };
 
+const SVG = (paths) =>
+  `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
+const METRIC_ICON = {
+  minutes: SVG('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+  budget_pct: SVG('<path d="M4 18a8 8 0 1 1 16 0"/><path d="M12 18l4-6"/>'),
+  score: SVG('<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.600-7 10-7 10z"/>'),
+  sessions: SVG('<path d="M4 7h12l-3-3M20 17H8l3 3"/>'),
+};
+const ARROW = {
+  up: SVG('<path d="M12 19V5M6 11l6-6 6 6"/>'),
+  down: SVG('<path d="M12 5v14M6 13l6 6 6-6"/>'),
+  same: SVG('<path d="M5 12h14"/>'),
+};
+
+function setLabel(el, text) {
+  el.replaceChildren();
+  if (!text) return;
+  const ico = document.createElement("span");
+  ico.innerHTML = METRIC_ICON[state.metric] || "";
+  ico.style.display = "contents";
+  el.append(ico, text);
+}
+
+function setDelta(el, kind, text, better) {
+  el.hidden = false;
+  el.className = `big-delta${better ? " better" : ""}${kind === "same" ? " same" : ""}`;
+  el.innerHTML = ARROW[kind];
+  el.append(text);
+}
+
 function bigLabel(metric, range) {
   if (metric === "minutes") {
     if (range === "day") return "Daily total";
@@ -54,16 +84,15 @@ export async function load() {
   const seq = ++loadSeq;
   const q = { range: state.range, anchor: state.anchor };
   try {
-    const [summary, series, sites, score, heatmap, health] = await Promise.all([
+    const [summary, series, sites, score, health] = await Promise.all([
       get("/api/summary", q),
       get("/api/series", { ...q, metric: "minutes" }),
       get("/api/sites", q),
       get("/api/score"),
-      get("/api/heatmap", q),
       get("/api/health"),
     ]);
     if (seq !== loadSeq) return;
-    Object.assign(data, { summary, series, sites, score, heatmap, health, offline: false });
+    Object.assign(data, { summary, series, sites, score, health, offline: false });
     const sel = state.selected;
     if (sel != null && !(series.points[sel] && series.points[sel].values[state.metric] != null)) state.selected = null;
     if (state.selected != null) refreshSites();
@@ -155,32 +184,29 @@ function renderBig() {
   const delta = $("big-delta");
   delta.hidden = true;
   if (!s) {
-    label.textContent = "";
+    setLabel(label, "");
     value.textContent = "–";
     return;
   }
   const p = selectedPoint();
   if (p) {
-    label.textContent = bucketLabel(p) + (data.series.per_day_average ? " · average per day" : "");
+    setLabel(label, bucketLabel(p) + (data.series.per_day_average ? " · average per day" : ""));
     value.textContent = formatValue(state.metric, p.values[state.metric]);
     return;
   }
   const m = s.metrics[state.metric];
-  label.textContent = bigLabel(state.metric, s.range);
+  setLabel(label, bigLabel(state.metric, s.range));
   const avg = state.metric === "minutes" && s.range === "day" ? m.total : m.average;
   value.textContent = avg == null ? "–" : formatValue(state.metric, avg);
 
   const pct = m.change_pct;
   if (pct == null) return;
-  delta.hidden = false;
-  delta.classList.remove("better");
   if (Math.abs(pct) < 1) {
-    delta.textContent = `Same as ${VS[s.range]}`;
+    setDelta(delta, "same", `Same as ${VS[s.range]}`, false);
     return;
   }
   const better = LOWER_IS_BETTER[state.metric] ? pct < 0 : pct > 0;
-  delta.classList.toggle("better", better);
-  delta.textContent = `${pct < 0 ? "▼" : "▲"} ${Math.round(Math.abs(pct))}% ${pct < 0 ? "less" : "more"} than ${VS[s.range]}`;
+  setDelta(delta, pct < 0 ? "down" : "up", `${Math.round(Math.abs(pct))}% ${pct < 0 ? "less" : "more"} than ${VS[s.range]}`, better);
 }
 
 function renderChart() {
@@ -211,13 +237,13 @@ function renderCards(d, st) {
   const empty = !!d.summary && d.summary.has_data === false;
   setOfflineBanner($("banner"), d.offline);
   if (d.offline) startOfflinePoll(async () => (await get("/api/health")).ok, () => load());
-  for (const id of ["chart-card", "cards", "highlights"]) $(id).hidden = empty;
+  for (const id of ["chart-card", "cards"]) $(id).hidden = empty;
   if (empty) renderEmpty($("empty"));
   else clearEmpty($("empty"));
   renderModeSwitch(st.includeDemo);
   if (!d.summary) return;
   renderSites($("sites"), d.sites, { range: st.range });
-  renderHeatmap($("heatmap"), d.heatmap);
+  renderInsights($("insights"), { range: st.range, anchor: st.anchor, includeDemo: st.includeDemo });
   renderHighlights($("highlights"), d.summary);
   // the footer holds the armed-delete state, so draw it once per deployment
   const dep = d.health && d.health.deployment;

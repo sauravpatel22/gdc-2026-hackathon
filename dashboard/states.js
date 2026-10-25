@@ -62,7 +62,7 @@ export function startOfflinePoll(checkFn, onBack) {
   return stop;
 }
 
-export function startAutoRefresh(loadFn, ms = 60000) {
+export function startAutoRefresh(loadFn, ms = 5000) {
   let busy = false;
   let last = Date.now();
   const run = async () => {

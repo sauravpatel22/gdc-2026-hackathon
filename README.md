@@ -23,7 +23,7 @@ OLLAMA_ORIGINS="chrome-extension://*" ollama serve
 ollama pull gemma4:e2b
 ```
 
-Then open `chrome://extensions`, enable Developer mode, and click **Load unpacked**.
+Then open `chrome://extensions`, enable Developer mode, and click **Load unpacked**, and pick the `extension/` folder.
 
 ## Dashboard
 
@@ -50,4 +50,4 @@ Open http://localhost:8000/. The extension's popup and settings page have an "Op
 
 Chrome Manifest V3, plain JavaScript, no dependencies, no build step.
 
-See `Pause Claude Code Build Guide.pdf` for the full build plan.
+See `docs/guides/Pause Claude Code Build Guide.pdf` for the full build plan.
